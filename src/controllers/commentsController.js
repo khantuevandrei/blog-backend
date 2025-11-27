@@ -3,6 +3,7 @@ const {
   createComment: createCommentQuery,
   getPostComments: getPostCommentsQuery,
   updateComment: updateCommentQuery,
+  getCommentById,
 } = require("../db/queries/commentsQueries");
 
 async function createComment(req, res) {
@@ -75,19 +76,25 @@ async function updateComment(req, res) {
 
     const userId = req.user.id;
 
+    // Check if comment exists
+    const existingComment = await getCommentById(commentIdNum);
+    if (!existingComment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Check if authorized to update
+    if (existingComment.user_id !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to update this comment" });
+    }
+
     // Update comment
     const updatedComment = await updateCommentQuery(
       commentIdNum,
       trimmedBody,
       userId
     );
-
-    // If null
-    if (!updatedComment) {
-      return res
-        .status(404)
-        .json({ message: "Not authorized to update this comment" });
-    }
 
     // Return updated comment
     return res.status(200).json(updatedComment);
@@ -129,4 +136,4 @@ async function getPostComments(req, res) {
   }
 }
 
-module.exports = { createComment, getPostComments };
+module.exports = { createComment, updateComment, getPostComments };
