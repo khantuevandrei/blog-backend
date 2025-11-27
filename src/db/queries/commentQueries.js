@@ -11,3 +11,17 @@ async function createComment(postId, userId, body) {
   );
   return result.rows[0];
 }
+
+async function updateComment(commentId, body) {
+  const result = await pool.query(
+    `
+    UPDATE comments
+    SET body = $2,
+        updated_at = NOW()
+    WHERE id = $1
+    RETURNING *
+  `,
+    [commentId, body]
+  );
+  return result.rows[0];
+}
