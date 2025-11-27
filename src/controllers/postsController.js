@@ -3,6 +3,7 @@ const {
   publishPost: publishPostQuery,
   getPostById: getPostByIdQuery,
   updatePost: updatePostQuery,
+  deletePost: deletePostQuery,
 } = require("../db/queries/postsQueries");
 
 async function createPost(req, res) {
@@ -99,4 +100,33 @@ async function updatePost(req, res) {
   }
 }
 
-module.exports = { createPost, publishPost, updatePost };
+async function deletePost(req, res) {
+  try {
+    const { postId } = req.params;
+    const postIdNum = Number(postId);
+
+    // Find post
+    const foundPost = await getPostByIdQuery(postIdNum);
+
+    // If no post
+    if (!foundPost) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Only author can delete
+    if (foundPost.author_id !== req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this post" });
+    }
+
+    // Delete and return post
+    const deletedPost = await deletePostQuery(postIdNum);
+    return res.status(200).json(deletedPost);
+  } catch (err) {
+    console.error("Error deleting post", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+module.exports = { createPost, publishPost, updatePost, deletePost };
