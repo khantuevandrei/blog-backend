@@ -105,6 +105,47 @@ async function updateComment(req, res) {
   }
 }
 
+async function deleteComment(req, res) {
+  try {
+    const { commentId } = req.params;
+
+    // Require comment id
+    if (!commentId) {
+      return res.status(400).json({ message: "Comment id is required" });
+    }
+
+    // Check if comment id is numeric
+    const commentIdNum = Number(commentId);
+    if (isNaN(commentIdNum)) {
+      return res.status(400).json({ message: "Invalid post id" });
+    }
+
+    // Check if comment exists
+    const comment = await getCommentById(commentIdNum);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    const userId = req.user.id;
+
+    // Check if authorized to delete
+    if (comment.user_id !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this comment" });
+    }
+
+    // Delete comment
+    const deletedComment = await deleteCommentQuery(commentIdNum);
+
+    // Return deleted comment
+    return res.status(200).json(deletedComment);
+  } catch (err) {
+    console.error("Error deleting a comment", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
 async function getPostComments(req, res) {
   try {
     const { postId } = req.params;
@@ -137,4 +178,9 @@ async function getPostComments(req, res) {
   }
 }
 
-module.exports = { createComment, updateComment, getPostComments };
+module.exports = {
+  createComment,
+  updateComment,
+  deleteComment,
+  getPostComments,
+};
