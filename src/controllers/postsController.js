@@ -73,6 +73,11 @@ async function updatePost(req, res) {
     }
 
     const postIdNum = Number(postId);
+
+    if (isNaN(postIdNum)) {
+      return res.status(400).json({ message: "Invalid post ID" });
+    }
+
     const postTitle = title || null;
     const postBody = body || null;
 
@@ -104,6 +109,10 @@ async function deletePost(req, res) {
   try {
     const { postId } = req.params;
     const postIdNum = Number(postId);
+
+    if (isNaN(postIdNum)) {
+      return res.status(400).json({ message: "Invalid post ID" });
+    }
 
     // Find post
     const foundPost = await getPostByIdQuery(postIdNum);
