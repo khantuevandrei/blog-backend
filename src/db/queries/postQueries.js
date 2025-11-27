@@ -1,4 +1,3 @@
-const { post } = require("../../app");
 const pool = require("../pool");
 
 async function createPost(authorId, title, body) {
@@ -74,3 +73,25 @@ async function getAllPublishedPosts() {
   `);
   return result.rows;
 }
+
+async function getAllAuthorPosts(authorId) {
+  const result = await pool.query(
+    `
+    SELECT * FROM posts
+    WHERE author_id = $1
+    ORDER BY created_at DESC
+  `,
+    [authorId]
+  );
+  return result.rows;
+}
+
+module.exports = {
+  createPost,
+  publishPost,
+  updatePost,
+  deletePost,
+  getPostById,
+  getAllPublishedPosts,
+  getAllAuthorPosts,
+};
