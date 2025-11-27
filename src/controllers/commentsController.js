@@ -2,6 +2,7 @@ const { getPostById } = require("../db/queries/postsQueries");
 const {
   createComment: createCommentQuery,
   getPostComments: getPostCommentsQuery,
+  updateComment: updateCommentQuery,
 } = require("../db/queries/commentsQueries");
 
 async function createComment(req, res) {
@@ -12,11 +13,13 @@ async function createComment(req, res) {
     if (!postId || !body) {
       return res
         .status(400)
-        .json({ message: "Post id and content are required" });
+        .json({ message: "Post id and comment are required" });
     }
 
+    const trimmedBody = body.trim();
+
     // Check for empty comment
-    if (!body.trim()) {
+    if (!trimmedBody) {
       return res.status(400).json({ message: "Comment cannot be empty" });
     }
 
@@ -35,12 +38,61 @@ async function createComment(req, res) {
     const userId = req.user.id;
 
     // Create comment
-    const comment = await createCommentQuery(postIdNum, userId, body);
+    const comment = await createCommentQuery(postIdNum, userId, trimmedBody);
 
     // Return comment
     return res.status(201).json(comment);
   } catch (err) {
     console.error("Error creating comment", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+async function updateComment(req, res) {
+  try {
+    const { commentId } = req.params;
+    const { body } = req.body;
+
+    // Require comment id and body
+    if (!commentId || !body) {
+      return res
+        .status(400)
+        .json({ message: "Comment id and comment are required" });
+    }
+
+    // Check if comment id is numeric
+    const commentIdNum = Number(commentId);
+    if (isNaN(commentIdNum)) {
+      return res.status(400).json({ message: "Invalid comment id" });
+    }
+
+    const trimmedBody = body.trim();
+
+    // Check for empty comment
+    if (!trimmedBody) {
+      return res.status(400).json({ message: "Comment cannot be empty" });
+    }
+
+    const userId = req.user.id;
+
+    // Update comment
+    const updatedComment = await updateCommentQuery(
+      commentIdNum,
+      trimmedBody,
+      userId
+    );
+
+    // If null
+    if (!updatedComment) {
+      return res
+        .status(404)
+        .json({ message: "Not authorized to update this comment" });
+    }
+
+    // Return updated comment
+    return res.status(200).json(updatedComment);
+  } catch (err) {
+    console.error("Error updating comment", err);
     return res.status(500).json({ message: "Server error" });
   }
 }
@@ -77,4 +129,4 @@ async function getPostComments(req, res) {
   }
 }
 
-module.exports = { createComment };
+module.exports = { createComment, getPostComments };

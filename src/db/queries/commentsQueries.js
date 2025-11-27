@@ -12,26 +12,38 @@ async function createComment(postId, userId, body) {
   return result.rows[0] || null;
 }
 
-async function updateComment(commentId, body) {
+async function updateComment(commentId, body, userId) {
   const result = await pool.query(
     `
     UPDATE comments
     SET body = $2,
         updated_at = NOW()
-    WHERE id = $1
+    WHERE id = $1 AND user_id = $3
     RETURNING id, post_id, user_id, body, created_at, updated_at
   `,
-    [commentId, body]
+    [commentId, body, userId]
   );
   return result.rows[0] || null;
 }
 
-async function deleteComment(commentId) {
+async function deleteComment(commentId, userId) {
   const result = await pool.query(
     `
     DELETE FROM comments
-    WHERE id = $1
+    WHERE id = $1 AND user_id = $2
     RETURNING id, post_id, user_id, body, created_at, updated_at
+  `,
+    [commentId, userId]
+  );
+  return result.rows[0] || null;
+}
+
+async function getCommentById(commentId) {
+  const result = await pool.query(
+    `
+    SELECT id, post_id, user_id, body, created_at, updated_at
+    FROM comments
+    WHERE id = $1 
   `,
     [commentId]
   );
@@ -55,5 +67,6 @@ module.exports = {
   createComment,
   updateComment,
   deleteComment,
+  getCommentById,
   getPostComments,
 };
