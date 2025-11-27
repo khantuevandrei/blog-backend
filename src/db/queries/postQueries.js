@@ -53,3 +53,15 @@ async function deletePost(postId) {
   );
   return result.rows[0];
 }
+
+async function getPostById(postId) {
+  const result = await pool.query(
+    `
+    SELECT * FROM posts
+    WHERE id = $1
+    LIMIT 1
+  `,
+    [postId]
+  );
+  return result.rows[0];
+}
