@@ -37,3 +37,22 @@ async function deleteComment(commentId) {
   );
   return result.rows[0];
 }
+
+async function getCommentsForPost(postId) {
+  const result = await pool.query(
+    `
+    SELECT * FROM comments
+    WHERE post_id = $1
+    ORDER BY created_at DESC
+  `,
+    [postId]
+  );
+  return result.rows;
+}
+
+module.exports = {
+  createComment,
+  updateComment,
+  deleteComment,
+  getCommentsForPost,
+};
