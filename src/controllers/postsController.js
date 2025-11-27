@@ -2,6 +2,7 @@ const {
   createPost: createPostQuery,
   publishPost: publishPostQuery,
   getPostById: getPostByIdQuery,
+  updatePost: updatePostQuery,
 } = require("../db/queries/postsQueries");
 
 async function createPost(req, res) {
@@ -60,4 +61,42 @@ async function publishPost(req, res) {
   }
 }
 
-module.exports = { createPost, publishPost };
+async function updatePost(req, res) {
+  try {
+    const { title, body } = req.body;
+    const { postId } = req.params;
+
+    // Require title or body
+    if (!title && !body) {
+      return res.status(400).json({ message: "Title or body is required" });
+    }
+
+    const postIdNum = Number(postId);
+    const postTitle = title || null;
+    const postBody = body || null;
+
+    // Find post
+    const foundPost = await getPostByIdQuery(postId);
+
+    // If no post
+    if (!foundPost) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Only author can update
+    if (foundPost.author_id !== req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to update this post" });
+    }
+
+    // Update and return post
+    const updatedPost = await updatePostQuery(postIdNum, postTitle, postBody);
+    return res.status(200).json(updatedPost);
+  } catch (err) {
+    console.error("Error updating post", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+module.exports = { createPost, publishPost, updatePost };
