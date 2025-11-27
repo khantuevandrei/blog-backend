@@ -1,5 +1,18 @@
 const pool = require("../pool");
 
+async function getPostById(postId) {
+  const result = await pool.query(
+    `
+    SELECT id, author_id, title, body, published_at, created_at, updated_at
+    FROM posts
+    WHERE id = $1
+    LIMIT 1
+  `,
+    [postId]
+  );
+  return result.rows[0] || null;
+}
+
 async function createPost(authorId, title, body) {
   const result = await pool.query(
     `
@@ -8,20 +21,6 @@ async function createPost(authorId, title, body) {
     RETURNING id, author_id, title, body, published_at, created_at, updated_at
   `,
     [authorId, title, body]
-  );
-  return result.rows[0] || null;
-}
-
-async function publishPost(postId) {
-  const result = await pool.query(
-    `
-    UPDATE posts
-    SET published = TRUE, 
-        published_at = NOW()
-    WHERE id = $1
-    RETURNING id, author_id, title, body, published_at, created_at, updated_at
-  `,
-    [postId]
   );
   return result.rows[0] || null;
 }
@@ -53,13 +52,14 @@ async function deletePost(postId) {
   return result.rows[0] || null;
 }
 
-async function getPostById(postId) {
+async function publishPost(postId) {
   const result = await pool.query(
     `
-    SELECT id, author_id, title, body, published_at, created_at, updated_at
-    FROM posts
+    UPDATE posts
+    SET published = TRUE, 
+        published_at = NOW()
     WHERE id = $1
-    LIMIT 1
+    RETURNING id, author_id, title, body, published_at, created_at, updated_at
   `,
     [postId]
   );
@@ -90,11 +90,11 @@ async function getAllAuthorPosts(authorId) {
 }
 
 module.exports = {
+  getPostById,
   createPost,
-  publishPost,
   updatePost,
   deletePost,
-  getPostById,
+  publishPost,
   getAllPublishedPosts,
   getAllAuthorPosts,
 };
