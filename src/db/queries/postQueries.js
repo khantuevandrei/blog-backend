@@ -5,11 +5,11 @@ async function createPost(authorId, title, body) {
     `
     INSERT INTO posts (author_id, title, body)
     VALUES ($1, $2, $3)
-    RETURNING *
+    RETURNING id, author_id, title, body, published_at, created_at, updated_at
   `,
     [authorId, title, body]
   );
-  return result.rows[0];
+  return result.rows[0] || null;
 }
 
 async function publishPost(postId) {
@@ -19,11 +19,11 @@ async function publishPost(postId) {
     SET published = TRUE, 
         published_at = NOW()
     WHERE id = $1
-    RETURNING *
+    RETURNING id, author_id, title, body, published_at, created_at, updated_at
   `,
     [postId]
   );
-  return result.rows[0];
+  return result.rows[0] || null;
 }
 
 async function updatePost(postId, title, body) {
@@ -34,11 +34,11 @@ async function updatePost(postId, title, body) {
         body = COALESCE($3, body),
         updated_at = NOW()
     WHERE id = $1
-    RETURNING *
+    RETURNING id, author_id, title, body, published_at, created_at, updated_at
   `,
     [postId, title, body]
   );
-  return result.rows[0];
+  return result.rows[0] || null;
 }
 
 async function deletePost(postId) {
@@ -46,28 +46,30 @@ async function deletePost(postId) {
     `
     DELETE FROM posts
     WHERE id = $1
-    RETURNING *
+    RETURNING id, author_id, title, body, published_at, created_at, updated_at
   `,
     [postId]
   );
-  return result.rows[0];
+  return result.rows[0] || null;
 }
 
 async function getPostById(postId) {
   const result = await pool.query(
     `
-    SELECT * FROM posts
+    SELECT id, author_id, title, body, published_at, created_at, updated_at
+    FROM posts
     WHERE id = $1
     LIMIT 1
   `,
     [postId]
   );
-  return result.rows[0];
+  return result.rows[0] || null;
 }
 
 async function getAllPublishedPosts() {
   const result = await pool.query(`
-    SELECT * FROM posts
+    SELECT id, author_id, title, body, published_at, created_at, updated_at
+    FROM posts
     WHERE published = TRUE
     ORDER BY published_at DESC
   `);
@@ -77,7 +79,8 @@ async function getAllPublishedPosts() {
 async function getAllAuthorPosts(authorId) {
   const result = await pool.query(
     `
-    SELECT * FROM posts
+    SELECT id, author_id, title, body, published_at, created_at, updated_at
+    FROM posts
     WHERE author_id = $1
     ORDER BY created_at DESC
   `,
