@@ -11,3 +11,16 @@ async function createPost(author_id, title, body) {
   );
   return result.rows[0];
 }
+
+async function publishPost(post_id) {
+  const result = await pool.query(
+    `
+    UPDATE posts
+    SET published = TRUE, published_at = NOW()
+    WHERE id = $1
+    RETURNING *
+  `,
+    [post_id]
+  );
+  return result.rows[0];
+}
