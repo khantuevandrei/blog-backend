@@ -65,3 +65,12 @@ async function getPostById(postId) {
   );
   return result.rows[0];
 }
+
+async function getAllPublishedPosts() {
+  const result = await pool.query(`
+    SELECT * FROM posts
+    WHERE published = TRUE
+    ORDER BY published_at DESC
+  `);
+  return result.rows;
+}
