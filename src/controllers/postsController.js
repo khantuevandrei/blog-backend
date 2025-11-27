@@ -4,6 +4,7 @@ const {
   getPostById: getPostByIdQuery,
   updatePost: updatePostQuery,
   deletePost: deletePostQuery,
+  getAllPublishedPosts: getAllPublishedPostsQuery,
 } = require("../db/queries/postsQueries");
 
 async function createPost(req, res) {
@@ -163,10 +164,24 @@ async function getPostById(req, res) {
   }
 }
 
+async function getAllPublishedPosts(req, res) {
+  try {
+    // Find posts
+    const publishedPosts = await getAllPublishedPostsQuery();
+
+    // Return published posts
+    return res.status(200).json(publishedPosts);
+  } catch (err) {
+    console.error("Error getting all published posts", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
 module.exports = {
   createPost,
   publishPost,
   updatePost,
   deletePost,
   getPostById,
+  getAllPublishedPosts,
 };
