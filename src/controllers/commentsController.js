@@ -1,11 +1,37 @@
 const { getPostById } = require("../db/queries/postsQueries");
 const {
-  getCommentById,
+  getCommentById: getCommentByIdQuery,
   createComment: createCommentQuery,
   updateComment: updateCommentQuery,
   deleteComment: deleteCommentQuery,
   getPostComments: getPostCommentsQuery,
 } = require("../db/queries/commentsQueries");
+
+async function getCommentById(req, res) {
+  try {
+    const { commentId } = req.params;
+
+    // Check if comment id is numeric
+    const commentIdNum = Number(commentId);
+    if (isNaN(commentIdNum)) {
+      return res.status(400).json({ message: "Invalid comment ID" });
+    }
+
+    // Find comment
+    const foundComment = await getCommentByIdQuery(commentIdNum);
+
+    // If no comment
+    if (!foundComment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Return comment
+    return res.status(200).json(foundComment);
+  } catch (err) {
+    console.error("Error getting comment", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
 
 async function createComment(req, res) {
   try {
@@ -78,7 +104,7 @@ async function updateComment(req, res) {
     const userId = req.user.id;
 
     // Check if comment exists
-    const existingComment = await getCommentById(commentIdNum);
+    const existingComment = await getCommentByIdQuery(commentIdNum);
     if (!existingComment) {
       return res.status(404).json({ message: "Comment not found" });
     }
@@ -117,11 +143,11 @@ async function deleteComment(req, res) {
     // Check if comment id is numeric
     const commentIdNum = Number(commentId);
     if (isNaN(commentIdNum)) {
-      return res.status(400).json({ message: "Invalid post id" });
+      return res.status(400).json({ message: "Invalid comment id" });
     }
 
     // Check if comment exists
-    const comment = await getCommentById(commentIdNum);
+    const comment = await getCommentByIdQuery(commentIdNum);
     if (!comment) {
       return res.status(404).json({ message: "Comment not found" });
     }
@@ -179,6 +205,7 @@ async function getPostComments(req, res) {
 }
 
 module.exports = {
+  getCommentById,
   createComment,
   updateComment,
   deleteComment,
