@@ -2,7 +2,7 @@ require("dotenv").config();
 
 const passport = require("passport");
 const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
-const { findUserById } = require("../db/queries/userQueries");
+const { findUserById } = require("../db/queries/usersQueries");
 
 const opts = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

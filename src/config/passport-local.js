@@ -2,7 +2,7 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const bcrypt = require("bcryptjs");
 
-const { findUserByUsername } = require("../db/queries/userQueries");
+const { findUserByUsername } = require("../db/queries/usersQueries");
 
 passport.use(
   new LocalStrategy(
