@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+require("../config/passport-local");
 const passport = require("passport");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
