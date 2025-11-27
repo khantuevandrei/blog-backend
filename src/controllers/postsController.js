@@ -129,4 +129,35 @@ async function deletePost(req, res) {
   }
 }
 
-module.exports = { createPost, publishPost, updatePost, deletePost };
+async function getPostById(req, res) {
+  try {
+    const { postId } = req.params;
+    const postIdNum = Number(postId);
+
+    if (isNaN(postIdNum)) {
+      return res.status(400).json({ message: "Invalid post ID" });
+    }
+
+    // Find post
+    const foundPost = await getPostByIdQuery(postIdNum);
+
+    // If no post
+    if (!foundPost) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Return post
+    return res.status(200).json(foundPost);
+  } catch (err) {
+    console.error("Error getting post", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+module.exports = {
+  createPost,
+  publishPost,
+  updatePost,
+  deletePost,
+  getPostById,
+};
