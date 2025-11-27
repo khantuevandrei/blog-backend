@@ -25,3 +25,15 @@ async function updateComment(commentId, body) {
   );
   return result.rows[0];
 }
+
+async function deleteComment(commentId) {
+  const result = await pool.query(
+    `
+    DELETE FROM comments
+    WHERE id = $1
+    RETURNING *
+  `,
+    [commentId]
+  );
+  return result.rows[0];
+}
