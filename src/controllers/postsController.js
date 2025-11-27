@@ -11,8 +11,9 @@ const {
 async function getPostById(req, res) {
   try {
     const { postId } = req.params;
-    const postIdNum = Number(postId);
 
+    // Check if post id is numeric
+    const postIdNum = Number(postId);
     if (isNaN(postIdNum)) {
       return res.status(400).json({ message: "Invalid post ID" });
     }
@@ -42,11 +43,25 @@ async function createPost(req, res) {
       return res.status(400).json({ message: "Title and body are required" });
     }
 
+    const trimmedTitle = title.trim();
+
+    // Check for empty title
+    if (!trimmedTitle) {
+      return res.status(400).json({ message: "Title cannot be empty" });
+    }
+
+    const trimmedBody = body.trim();
+
+    // Check for empty post
+    if (!trimmedBody) {
+      return res.status(400).json({ message: "Post cannot be empty" });
+    }
+
     // Use authenticated user ID as author_id
     const authorId = req.user.id;
 
     // Create post
-    const post = await createPostQuery(authorId, title, body);
+    const post = await createPostQuery(authorId, trimmedTitle, trimmedBody);
 
     // Return created post
     return res.status(201).json(post);
@@ -66,8 +81,8 @@ async function updatePost(req, res) {
       return res.status(400).json({ message: "Title or body is required" });
     }
 
+    // Check if post id is numeric
     const postIdNum = Number(postId);
-
     if (isNaN(postIdNum)) {
       return res.status(400).json({ message: "Invalid post ID" });
     }
@@ -102,8 +117,9 @@ async function updatePost(req, res) {
 async function deletePost(req, res) {
   try {
     const { postId } = req.params;
-    const postIdNum = Number(postId);
 
+    // Check if post id is numeric
+    const postIdNum = Number(postId);
     if (isNaN(postIdNum)) {
       return res.status(400).json({ message: "Invalid post ID" });
     }
@@ -134,15 +150,21 @@ async function deletePost(req, res) {
 
 async function publishPost(req, res) {
   try {
-    const { postId } = req.body;
+    const { postId } = req.params;
 
     // Require post id
     if (!postId) {
       return res.status(400).json({ message: "Post id is required" });
     }
 
+    // Check if post id is numeric
+    const postIdNum = Number(postId);
+    if (isNaN(postIdNum)) {
+      return res.status(400).json({ message: "Invalid post ID" });
+    }
+
     // Find post
-    const foundPost = await getPostByIdQuery(postId);
+    const foundPost = await getPostByIdQuery(postIdNum);
 
     // If no post
     if (!foundPost) {
@@ -157,7 +179,7 @@ async function publishPost(req, res) {
     }
 
     // Publish and return post
-    const publishedPost = await publishPostQuery(postId);
+    const publishedPost = await publishPostQuery(postIdNum);
     return res.status(200).json(publishedPost);
   } catch (err) {
     console.error("Error publishing post", err);

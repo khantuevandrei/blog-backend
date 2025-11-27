@@ -18,9 +18,11 @@ async function registerUser(req, res) {
       .json({ message: "Username and password are required" });
   }
 
+  const normalizedUsername = username.trim().toLowerCase();
+
   try {
     // Check if username already exists
-    const existingUser = await findUserByUsername(username);
+    const existingUser = await findUserByUsername(normalizedUsername);
     if (existingUser) {
       return res.status(409).json({ message: "User already exists" });
     }
@@ -28,7 +30,7 @@ async function registerUser(req, res) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     // Create user
-    const userInfo = await createUser(username, hashedPassword);
+    const userInfo = await createUser(normalizedUsername, hashedPassword);
     // Return user info
     return res.status(201).json(userInfo);
   } catch (err) {
