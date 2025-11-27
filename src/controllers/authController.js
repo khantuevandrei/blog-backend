@@ -3,7 +3,10 @@ require("dotenv").config();
 const passport = require("passport");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { createUser, findUserByUsername } = require("../db/queries/userQueries");
+const {
+  createUser,
+  findUserByUsername,
+} = require("../db/queries/usersQueries");
 
 async function registerUser(req, res) {
   const { username, password } = req.body;
