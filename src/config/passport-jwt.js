@@ -6,7 +6,7 @@ const { findUserById } = require("../db/queries/usersQueries");
 
 const opts = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secret: process.env.JWT_SECRET,
+  secretOrKey: process.env.JWT_SECRET,
 };
 
 passport.use(
