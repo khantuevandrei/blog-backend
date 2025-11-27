@@ -1,5 +1,17 @@
 const pool = require("../pool");
 
+async function getCommentById(commentId) {
+  const result = await pool.query(
+    `
+    SELECT id, post_id, user_id, body, created_at, updated_at
+    FROM comments
+    WHERE id = $1 
+  `,
+    [commentId]
+  );
+  return result.rows[0] || null;
+}
+
 async function createComment(postId, userId, body) {
   const result = await pool.query(
     `
@@ -38,18 +50,6 @@ async function deleteComment(commentId, userId) {
   return result.rows[0] || null;
 }
 
-async function getCommentById(commentId) {
-  const result = await pool.query(
-    `
-    SELECT id, post_id, user_id, body, created_at, updated_at
-    FROM comments
-    WHERE id = $1 
-  `,
-    [commentId]
-  );
-  return result.rows[0] || null;
-}
-
 async function getPostComments(postId) {
   const result = await pool.query(
     `
@@ -64,9 +64,9 @@ async function getPostComments(postId) {
 }
 
 module.exports = {
+  getCommentById,
   createComment,
   updateComment,
   deleteComment,
-  getCommentById,
   getPostComments,
 };
