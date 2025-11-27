@@ -1,12 +1,37 @@
 const {
-  createPost: createPostQuery,
-  publishPost: publishPostQuery,
   getPostById: getPostByIdQuery,
+  createPost: createPostQuery,
   updatePost: updatePostQuery,
   deletePost: deletePostQuery,
+  publishPost: publishPostQuery,
   getAllPublishedPosts: getAllPublishedPostsQuery,
   getAllAuthorPosts: getAllAuthorPostsQuery,
 } = require("../db/queries/postsQueries");
+
+async function getPostById(req, res) {
+  try {
+    const { postId } = req.params;
+    const postIdNum = Number(postId);
+
+    if (isNaN(postIdNum)) {
+      return res.status(400).json({ message: "Invalid post ID" });
+    }
+
+    // Find post
+    const foundPost = await getPostByIdQuery(postIdNum);
+
+    // If no post
+    if (!foundPost) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Return post
+    return res.status(200).json(foundPost);
+  } catch (err) {
+    console.error("Error getting post", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
 
 async function createPost(req, res) {
   try {
@@ -27,39 +52,6 @@ async function createPost(req, res) {
     return res.status(201).json(post);
   } catch (err) {
     console.error("Error creating post", err);
-    return res.status(500).json({ message: "Server error" });
-  }
-}
-
-async function publishPost(req, res) {
-  try {
-    const { postId } = req.body;
-
-    // Require post id
-    if (!postId) {
-      return res.status(400).json({ message: "Post id is required" });
-    }
-
-    // Find post
-    const foundPost = await getPostByIdQuery(postId);
-
-    // If no post
-    if (!foundPost) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-
-    // Only author can publish
-    if (foundPost.author_id !== req.user.id) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to publish this post" });
-    }
-
-    // Publish and return post
-    const publishedPost = await publishPostQuery(postId);
-    return res.status(200).json(publishedPost);
-  } catch (err) {
-    console.error("Error publishing post", err);
     return res.status(500).json({ message: "Server error" });
   }
 }
@@ -140,27 +132,35 @@ async function deletePost(req, res) {
   }
 }
 
-async function getPostById(req, res) {
+async function publishPost(req, res) {
   try {
-    const { postId } = req.params;
-    const postIdNum = Number(postId);
+    const { postId } = req.body;
 
-    if (isNaN(postIdNum)) {
-      return res.status(400).json({ message: "Invalid post ID" });
+    // Require post id
+    if (!postId) {
+      return res.status(400).json({ message: "Post id is required" });
     }
 
     // Find post
-    const foundPost = await getPostByIdQuery(postIdNum);
+    const foundPost = await getPostByIdQuery(postId);
 
     // If no post
     if (!foundPost) {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    // Return post
-    return res.status(200).json(foundPost);
+    // Only author can publish
+    if (foundPost.author_id !== req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to publish this post" });
+    }
+
+    // Publish and return post
+    const publishedPost = await publishPostQuery(postId);
+    return res.status(200).json(publishedPost);
   } catch (err) {
-    console.error("Error getting post", err);
+    console.error("Error publishing post", err);
     return res.status(500).json({ message: "Server error" });
   }
 }
@@ -194,11 +194,11 @@ async function getAllAuthorPosts(req, res) {
 }
 
 module.exports = {
+  getPostById,
   createPost,
-  publishPost,
   updatePost,
   deletePost,
-  getPostById,
+  publishPost,
   getAllPublishedPosts,
   getAllAuthorPosts,
 };
