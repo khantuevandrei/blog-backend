@@ -38,7 +38,7 @@ async function deleteComment(commentId) {
   return result.rows[0] || null;
 }
 
-async function getCommentsForPost(postId) {
+async function getPostComments(postId) {
   const result = await pool.query(
     `
     SELECT id, post_id, user_id, body, created_at, updated_at
@@ -55,5 +55,5 @@ module.exports = {
   createComment,
   updateComment,
   deleteComment,
-  getCommentsForPost,
+  getPostComments,
 };
