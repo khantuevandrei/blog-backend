@@ -1,9 +1,10 @@
 const { getPostById } = require("../db/queries/postsQueries");
 const {
-  createComment: createCommentQuery,
-  getPostComments: getPostCommentsQuery,
-  updateComment: updateCommentQuery,
   getCommentById,
+  createComment: createCommentQuery,
+  updateComment: updateCommentQuery,
+  deleteComment: deleteCommentQuery,
+  getPostComments: getPostCommentsQuery,
 } = require("../db/queries/commentsQueries");
 
 async function createComment(req, res) {
