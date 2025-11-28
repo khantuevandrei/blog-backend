@@ -184,17 +184,66 @@ async function deletePost(postId) {
 }
 
 async function publishPost(postId) {
-  const result = await pool.query(
+  const postResult = await pool.query(
     `
-    UPDATE posts
-    SET published = TRUE, 
-        published_at = NOW()
+    SELECT id, author_id, title, body, published_at, created_at, updated_at
+    FROM posts
     WHERE id = $1
-    RETURNING id, author_id, title, body, published_at, created_at, updated_at
-  `,
+    LIMIT 1
+    `,
     [postId]
   );
-  return result.rows[0] || null;
+  const post = postResult.rows[0];
+  if (!post) return null;
+
+  const publishedResult = await pool.query(
+    `
+    UPDATE posts
+    SET published = TRUE,
+        published_at = NOW(),
+        updated_at = NOW()
+    WHERE id = $1
+    RETURNING id, author_id, title, body, published_at, created_at, updated_at
+    `,
+    [postId]
+  );
+  const publishedPost = publishedResult.rows[0];
+  if (!publishedPost) return null;
+
+  const authorResult = await pool.query(
+    `
+    SELECT id, username, email
+    FROM users
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [publishedPost.author_id]
+  );
+  const author = authorResult.rows[0] || null;
+
+  const commentsResult = await pool.query(
+    `
+    SELECT c.id, c.body AS content, c.created_at,
+           json_build_object('id', u.id, 'username', u.username) AS author
+    FROM comments c
+    JOIN users u ON c.user_id = u.id
+    WHERE c.post_id = $1
+    ORDER BY c.created_at DESC
+    `,
+    [postId]
+  );
+  const comments = commentsResult.rows || [];
+
+  return {
+    id: publishedPost.id,
+    title: publishedPost.title,
+    content: publishedPost.body,
+    created_at: publishedPost.created_at,
+    updated_at: publishedPost.updated_at,
+    published_at: publishedPost.published_at,
+    author,
+    comments,
+  };
 }
 
 async function getAllPublishedPosts() {
