@@ -46,17 +46,27 @@ async function createComment(postId, userId, body) {
 }
 
 async function updateComment(commentId, body, userId) {
-  const result = await pool.query(
+  const commentResult = await pool.query(
     `
     UPDATE comments
-    SET body = $2,
-        updated_at = NOW()
+    SET body = $2, updated_at = NOW()
     WHERE id = $1 AND user_id = $3
     RETURNING id, post_id, user_id, body, created_at, updated_at
-  `,
+    `,
     [commentId, body, userId]
   );
-  return result.rows[0] || null;
+  const comment = commentResult.rows[0];
+  if (!comment) return null;
+
+  const authorResult = await pool.query(
+    `SELECT id, username FROM users WHERE id = $1 LIMIT 1`,
+    [userId]
+  );
+  const author = authorResult.rows[0] || null;
+
+  comment.author = author;
+
+  return comment;
 }
 
 async function deleteComment(commentId, userId) {
