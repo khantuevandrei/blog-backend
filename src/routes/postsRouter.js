@@ -6,19 +6,19 @@ const {
   updatePost,
   deletePost,
   publishPost,
-  getAllPublishedPosts,
-  getAllAuthorPosts,
+  getPublishedPosts,
+  getAuthorPosts,
 } = require("../controllers/postsController");
 
 const router = express.Router();
 
 const authenticateJWT = passport.authenticate("jwt", { session: false });
 
-router.get("/", getAllPublishedPosts);
+router.get("/", getPublishedPosts);
 
 router.post("/", authenticateJWT, createPost);
 
-router.get("/author", authenticateJWT, getAllAuthorPosts);
+router.get("/author", authenticateJWT, getAuthorPosts);
 
 router.get("/:postId", getPostById);
 
