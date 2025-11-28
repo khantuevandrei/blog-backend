@@ -35,7 +35,7 @@ async function getPostById(postId) {
     LEFT JOIN users cu ON c.author_id = cu.id
     WHERE p.id = $1
     GROUP BY p.id, u.id;
-  `,
+    `,
     [postId]
   );
   const row = result.rows[0];
@@ -91,7 +91,7 @@ async function createPost(authorId, title, body) {
 }
 
 async function updatePost(postId, title, body) {
-  const result = await pool.query(
+  const postResult = await pool.query(
     `
     UPDATE posts
     SET title = COALESCE($2, title),
@@ -99,10 +99,46 @@ async function updatePost(postId, title, body) {
         updated_at = NOW()
     WHERE id = $1
     RETURNING id, author_id, title, body, published_at, created_at, updated_at
-  `,
+    `,
     [postId, title, body]
   );
-  return result.rows[0] || null;
+  const post = postResult.rows[0];
+  if (!post) return null;
+
+  const authorResult = await pool.query(
+    `
+    SELECT id, username, email
+    FROM users
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [post.author_id]
+  );
+  const author = authorResult.rows[0];
+
+  const commentsResult = await pool.query(
+    `
+    SELECT c.id, c.body AS content, c.created_at, 
+           json_build_object('id', u.id, 'username', u.username) AS author
+    FROM comments c
+    JOIN users u ON c.user_id = u.id
+    WHERE c.post_id = $1
+    ORDER BY c.created_at DESC
+    `,
+    [postId]
+  );
+  const comments = commentsResult.rows;
+
+  return {
+    id: post.id,
+    title: post.title,
+    content: post.body,
+    created_at: post.created_at,
+    updated_at: post.updated_at,
+    published_at: post.published_at,
+    author: author || null,
+    comments: comments || [],
+  };
 }
 
 async function deletePost(postId) {
