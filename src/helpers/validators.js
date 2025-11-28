@@ -1,14 +1,13 @@
 const { getCommentById } = require("../db/queries/commentsQueries");
 const { getPostById } = require("../db/queries/postsQueries");
 
+// Check if id exists and it is numeric
 function checkId(id, type = "ID") {
-  // Check if has id
   if (id === undefined || id === null) {
     const err = new Error(`${type} is required`);
     err.status = 400;
     throw err;
   }
-  // Check if id is numeric
   if (isNaN(id)) {
     const err = new Error(`Invalid ${type}`);
     err.status = 400;
@@ -17,8 +16,8 @@ function checkId(id, type = "ID") {
   return Number(id);
 }
 
+// Check if body exists and it is not empty
 function checkBody(body, name = "Body") {
-  // Check if has body
   if (!body || !body.trim()) {
     const err = new Error(`${name} is required`);
     err.status = 400;
@@ -27,6 +26,7 @@ function checkBody(body, name = "Body") {
   return body.trim();
 }
 
+// Check if user is authorized to perform a query
 function checkIfAuthorized(type, userId) {
   if (type.user_id !== userId) {
     const err = new Error("Not authorized");
@@ -35,8 +35,9 @@ function checkIfAuthorized(type, userId) {
   }
 }
 
+// Check if comment exists
 async function checkIfCommentExists(id) {
-  const comment = await getCommentByIdQuery(id);
+  const comment = await getCommentById(id);
   if (!comment) {
     const err = new Error("Comment not found");
     err.status = 404;
@@ -45,6 +46,7 @@ async function checkIfCommentExists(id) {
   return comment;
 }
 
+// Check if post exists
 async function checkIfPostExists(id) {
   const post = await getPostById(id);
   if (!post) {
