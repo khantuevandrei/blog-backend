@@ -1,6 +1,6 @@
 const pool = require("../pool");
 
-// Get comment by ID with author
+// Get comment by ID
 async function getCommentById(commentId) {
   const result = await pool.query(
     `
@@ -22,7 +22,7 @@ async function getCommentById(commentId) {
   return result.rows[0] || null;
 }
 
-// Create comment with author in one query
+// Create comment
 async function createComment(postId, userId, body) {
   const result = await pool.query(
     `
@@ -45,7 +45,7 @@ async function createComment(postId, userId, body) {
   return result.rows[0] || null;
 }
 
-// Update comment with author
+// Update comment
 async function updateComment(commentId, body, userId) {
   const result = await pool.query(
     `
@@ -68,7 +68,7 @@ async function updateComment(commentId, body, userId) {
   return result.rows[0] || null;
 }
 
-// Delete comment with author
+// Delete comment
 async function deleteComment(commentId, userId) {
   const result = await pool.query(
     `
