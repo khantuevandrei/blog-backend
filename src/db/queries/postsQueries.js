@@ -1,57 +1,50 @@
 const pool = require("../pool");
 
 async function getPostById(postId) {
-  const result = await pool.query(
+  const postResult = await pool.query(
     `
-    SELECT 
-      p.id,
-      p.title,
-      p.content,
-      p.created_at,
-      p.updated_at,
-
-      u.id AS author_id,
-      u.username AS author_username,
-      u.email AS author_email,
-
-      COALESCE(
-          json_agg(
-              json_build_object(
-                  'id', c.id,
-                  'content', c.content,
-                  'created_at', c.created_at,
-                  'author', json_build_object(
-                      'id', cu.id,
-                      'username', cu.username
-                  )
-              )
-          ) FILTER (WHERE c.id IS NOT NULL),
-          '[]'
-      ) AS comments
-
-    FROM posts p
-    JOIN users u ON p.author_id = u.id
-    LEFT JOIN comments c ON p.id = c.post_id
-    LEFT JOIN users cu ON c.author_id = cu.id
-    WHERE p.id = $1
-    GROUP BY p.id, u.id;
+    INSERT INTO posts (author_id, title, body)
+    VALUES ($1, $2, $3)
+    RETURNING id, author_id, title, body, published_at, created_at, updated_at
     `,
-    [postId]
+    [authorId, title, body]
   );
-  const row = result.rows[0];
-  if (!row) return null;
+  const post = postResult.rows[0];
+  if (!post) return null;
+
+  const authorResult = await pool.query(
+    `
+    SELECT id, username, email
+    FROM users
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [authorId]
+  );
+  const author = authorResult.rows[0] || null;
+
+  const commentsResult = await pool.query(
+    `
+    SELECT c.id, c.body AS content, c.created_at, 
+           json_build_object('id', u.id, 'username', u.username) AS author
+    FROM comments c
+    JOIN users u ON c.user_id = u.id
+    WHERE c.post_id = $1
+    ORDER BY c.created_at DESC
+    `,
+    [post.id]
+  );
+  const comments = commentsResult.rows || [];
+
   return {
-    id: row.id,
-    title: row.title,
-    content: row.content,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-    author: {
-      id: row.author_id,
-      username: row.author_username,
-      email: row.author_email,
-    },
-    comments: row.comments,
+    id: post.id,
+    title: post.title,
+    content: post.body,
+    created_at: post.created_at,
+    updated_at: post.updated_at,
+    published_at: post.published_at,
+    author,
+    comments,
   };
 }
 
