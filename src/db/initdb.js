@@ -17,7 +17,7 @@ const SQL = `
   
   CREATE TABLE IF NOT EXISTS posts (
     id SERIAL PRIMARY KEY,
-    author_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     body TEXT NOT NULL,
     published BOOLEAN DEFAULT false,
