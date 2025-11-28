@@ -1,7 +1,7 @@
 const catchError = require("../helpers/catchError");
 const {
   checkId,
-  checkBody,
+  checkTextField,
   checkIfAuthorized,
   checkIfCommentExists,
   checkIfPostExists,
@@ -23,7 +23,7 @@ async function getCommentById(req, res) {
 // Create a new comment for a post
 async function createComment(req, res) {
   const postId = checkId(req.body.postId, "Post ID");
-  const body = checkBody(req.body.body, "Comment");
+  const body = checkTextField(req.body.body, "Comment");
   const userId = req.user.id;
 
   await checkIfPostExists(postId);
@@ -34,7 +34,7 @@ async function createComment(req, res) {
 // Update an existing comment by ID
 async function updateComment(req, res) {
   const commentId = checkId(req.params.commentId, "Comment ID");
-  const body = checkBody(req.body.body, "Comment");
+  const body = checkTextField(req.body.body, "Comment");
   const userId = req.user.id;
 
   const foundComment = await checkIfCommentExists(commentId);
