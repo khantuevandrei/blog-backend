@@ -1,152 +1,123 @@
 const pool = require("../pool");
 
-async function getPostById(postId) {
-  const postResult = await pool.query(
-    `
-    INSERT INTO posts (author_id, title, body)
-    VALUES ($1, $2, $3)
-    RETURNING id, author_id, title, body, published_at, created_at, updated_at
-    `,
-    [authorId, title, body]
-  );
-  const post = postResult.rows[0];
-  if (!post) return null;
-
-  const authorResult = await pool.query(
-    `
-    SELECT id, username, email
-    FROM users
-    WHERE id = $1
-    LIMIT 1
-    `,
-    [authorId]
-  );
-  const author = authorResult.rows[0] || null;
+// Helper to fetch comments for given post IDs with optional limit
+async function fetchComments(postIds, limit = 5) {
+  if (!postIds || postIds.length === 0 || limit <= 0) return {};
 
   const commentsResult = await pool.query(
     `
-    SELECT c.id, c.body AS content, c.created_at, 
-           json_build_object('id', u.id, 'username', u.username) AS author
+    SELECT 
+      c.id,
+      c.post_id,
+      c.body,
+      c.created_at,
+      json_build_object('id', u.id, 'username', u.username) AS author,
+      COUNT(*) OVER (PARTITION BY c.post_id) AS total_comments
     FROM comments c
     JOIN users u ON c.user_id = u.id
-    WHERE c.post_id = $1
+    WHERE c.post_id = ANY($1)
     ORDER BY c.created_at DESC
     `,
-    [post.id]
+    [postIds]
   );
-  const comments = commentsResult.rows || [];
 
-  return {
-    id: post.id,
-    title: post.title,
-    content: post.body,
-    created_at: post.created_at,
-    updated_at: post.updated_at,
-    published_at: post.published_at,
-    author,
-    comments,
-  };
+  const commentsByPost = {};
+  const totalCommentsMap = {};
+
+  for (const c of commentsResult.rows) {
+    if (!commentsByPost[c.post_id]) commentsByPost[c.post_id] = [];
+    if (commentsByPost[c.post_id].length < limit) {
+      commentsByPost[c.post_id].push({
+        id: c.id,
+        body: c.body,
+        created_at: c.created_at,
+        author: c.author,
+      });
+    }
+    totalCommentsMap[c.post_id] = Number(c.total_comments);
+  }
+
+  return { commentsByPost, totalCommentsMap };
 }
 
+// Fetch single post by ID with optional comments
+async function getPostById(postId, commentLimit = 5) {
+  commentLimit = Math.max(0, Math.min(commentLimit, 50));
+
+  const postResult = await pool.query(
+    `
+    SELECT 
+      p.id, p.title, p.body, p.published_at, p.created_at, p.updated_at,
+      json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS author
+    FROM posts p
+    JOIN users u ON p.author_id = u.id
+    WHERE p.id = $1
+    LIMIT 1
+    `,
+    [postId]
+  );
+
+  const post = postResult.rows[0];
+  if (!post) return null;
+
+  const { commentsByPost } = await fetchComments([postId], commentLimit);
+
+  return { ...post, comments: commentsByPost[postId] || [] };
+}
+
+// Create a new post
 async function createPost(authorId, title, body) {
   const postResult = await pool.query(
     `
     INSERT INTO posts (author_id, title, body)
     VALUES ($1, $2, $3)
-    RETURNING id, author_id, title, body, published_at, created_at, updated_at
+    RETURNING id, title, body, published_at, created_at, updated_at
     `,
     [authorId, title, body]
   );
-  const post = postResult.rows[0];
-  if (!post) return null;
+  const createdPost = postResult.rows[0];
+  if (!createdPost) return null;
 
   const authorResult = await pool.query(
-    `
-    SELECT id, username, email
-    FROM users
-    WHERE id = $1
-    LIMIT 1
-    `,
+    `SELECT id, username, email FROM users WHERE id = $1 LIMIT 1`,
     [authorId]
   );
-  const author = authorResult.rows[0];
+  const author = authorResult.rows[0] || null;
 
-  return {
-    id: post.id,
-    title: post.title,
-    content: post.body,
-    created_at: post.created_at,
-    updated_at: post.updated_at,
-    published_at: post.published_at,
-    author: author || null,
-    comments: [],
-  };
+  return { ...createdPost, author, comments: [] };
 }
 
-async function updatePost(postId, title, body) {
-  const postResult = await pool.query(
+// Update post and fetch optional comments
+async function updatePost(postId, title, body, commentLimit = 5) {
+  commentLimit = Math.max(0, Math.min(commentLimit, 50));
+
+  const postsResult = await pool.query(
     `
     UPDATE posts
     SET title = COALESCE($2, title),
         body = COALESCE($3, body),
         updated_at = NOW()
     WHERE id = $1
-    RETURNING id, author_id, title, body, published_at, created_at, updated_at
+    RETURNING id, title, body, published_at, created_at, updated_at, author_id
     `,
     [postId, title, body]
   );
-  const post = postResult.rows[0];
-  if (!post) return null;
+  const updatedPost = postsResult.rows[0];
+  if (!updatedPost) return null;
 
   const authorResult = await pool.query(
-    `
-    SELECT id, username, email
-    FROM users
-    WHERE id = $1
-    LIMIT 1
-    `,
-    [post.author_id]
+    `SELECT id, username, email FROM users WHERE id = $1 LIMIT 1`,
+    [updatedPost.author_id]
   );
-  const author = authorResult.rows[0];
+  const author = authorResult.rows[0] || null;
 
-  const commentsResult = await pool.query(
-    `
-    SELECT c.id, c.body AS content, c.created_at, 
-           json_build_object('id', u.id, 'username', u.username) AS author
-    FROM comments c
-    JOIN users u ON c.user_id = u.id
-    WHERE c.post_id = $1
-    ORDER BY c.created_at DESC
-    `,
-    [postId]
-  );
-  const comments = commentsResult.rows;
+  const { commentsByPost } = await fetchComments([postId], commentLimit);
 
-  return {
-    id: post.id,
-    title: post.title,
-    content: post.body,
-    created_at: post.created_at,
-    updated_at: post.updated_at,
-    published_at: post.published_at,
-    author: author || null,
-    comments: comments || [],
-  };
+  return { ...updatedPost, author, comments: commentsByPost[postId] || [] };
 }
 
+// Delete post
 async function deletePost(postId) {
-  const postResult = await pool.query(
-    `
-    SELECT id, author_id, title, body, published_at, created_at, updated_at
-    FROM posts
-    WHERE id = $1
-    LIMIT 1
-    `,
-    [postId]
-  );
-  const post = postResult.rows[0];
-  if (!post) return null;
-
   const deletedResult = await pool.query(
     `
     DELETE FROM posts
@@ -159,43 +130,16 @@ async function deletePost(postId) {
   if (!deletedPost) return null;
 
   const authorResult = await pool.query(
-    `
-    SELECT id, username, email
-    FROM users
-    WHERE id = $1
-    LIMIT 1
-    `,
+    `SELECT id, username, email FROM users WHERE id = $1 LIMIT 1`,
     [deletedPost.author_id]
   );
   const author = authorResult.rows[0] || null;
 
-  const comments = [];
-
-  return {
-    id: deletedPost.id,
-    title: deletedPost.title,
-    content: deletedPost.body,
-    created_at: deletedPost.created_at,
-    updated_at: deletedPost.updated_at,
-    published_at: deletedPost.published_at,
-    author,
-    comments,
-  };
+  return { ...deletedPost, author, comments: [] };
 }
 
+// Publish post
 async function publishPost(postId) {
-  const postResult = await pool.query(
-    `
-    SELECT id, author_id, title, body, published_at, created_at, updated_at
-    FROM posts
-    WHERE id = $1
-    LIMIT 1
-    `,
-    [postId]
-  );
-  const post = postResult.rows[0];
-  if (!post) return null;
-
   const publishedResult = await pool.query(
     `
     UPDATE posts
@@ -211,57 +155,24 @@ async function publishPost(postId) {
   if (!publishedPost) return null;
 
   const authorResult = await pool.query(
-    `
-    SELECT id, username, email
-    FROM users
-    WHERE id = $1
-    LIMIT 1
-    `,
+    `SELECT id, username, email FROM users WHERE id = $1 LIMIT 1`,
     [publishedPost.author_id]
   );
   const author = authorResult.rows[0] || null;
 
-  const commentsResult = await pool.query(
-    `
-    SELECT c.id, c.body AS content, c.created_at,
-           json_build_object('id', u.id, 'username', u.username) AS author
-    FROM comments c
-    JOIN users u ON c.user_id = u.id
-    WHERE c.post_id = $1
-    ORDER BY c.created_at DESC
-    `,
-    [postId]
-  );
-  const comments = commentsResult.rows || [];
-
-  return {
-    id: publishedPost.id,
-    title: publishedPost.title,
-    content: publishedPost.body,
-    created_at: publishedPost.created_at,
-    updated_at: publishedPost.updated_at,
-    published_at: publishedPost.published_at,
-    author,
-    comments,
-  };
+  return { ...publishedPost, author, comments: [] };
 }
 
-async function getAllPublishedPosts(limit = 10, offset = 0, commentLimit = 5) {
-  // Fetch posts with author info
+// Get published posts with comments
+async function getPublishedPosts(limit = 10, offset = 0, commentLimit = 5) {
+  limit = Math.max(1, Math.min(limit, 50));
+  offset = Math.max(0, offset);
+  commentLimit = Math.max(0, Math.min(commentLimit, 50));
+
   const postsResult = await pool.query(
     `
-    SELECT 
-      p.id,
-      p.title,
-      p.body AS content,
-      p.created_at,
-      p.updated_at,
-      p.published_at,
-      json_build_object(
-        'id', u.id,
-        'username', u.username,
-        'email', u.email
-      ) AS author
+    SELECT p.id, p.title, p.body, p.created_at, p.updated_at, p.published_at,
+           json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS author
     FROM posts p
     JOIN users u ON p.author_id = u.id
     WHERE p.published = TRUE
@@ -270,79 +181,38 @@ async function getAllPublishedPosts(limit = 10, offset = 0, commentLimit = 5) {
     `,
     [limit, offset]
   );
-  const posts = postsResult.rows;
 
+  const posts = postsResult.rows;
   if (posts.length === 0) return [];
 
   const postIds = posts.map((p) => p.id);
-
-  // Fetch comments for theses posts
-  const commentsResult = await pool.query(
-    `
-    SELECT 
-      c.id,
-      c.body AS content,
-      c.created_at,
-      c.post_id,
-      json_build_object(
-        'id', u.id,
-        'username', u.username
-      ) AS author
-    FROM comments c
-    JOIN users u ON c.user_id = u.id
-    WHERE c.post_id = ANY($1)
-    ORDER BY c.created_at DESC
-    `,
-    [postIds]
+  const { commentsByPost, totalCommentsMap } = await fetchComments(
+    postIds,
+    commentLimit
   );
-  const allComments = commentsResult.rows;
 
-  // Limit comments per post
-  const commentsByPost = {};
-  postIds.forEach((id) => (commentsByPost[id] = []));
-  for (const comment of allComments) {
-    if (commentsByPost[comment.post_id].length < commentLimit) {
-      commentsByPost[comment.post_id].push(comment);
-    }
-  }
-
-  // Count totla comments per post
-  const countsResult = await pool.query(
-    `
-    SELECT post_id, COUNT(*) AS total_comments
-    FROM comments
-    WHERE post_id = ANY($1)
-    GROUP BY post_id
-    `,
-    [postIds]
-  );
-  const totalCommentsMap = {};
-  countsResult.rows.forEach((row) => {
-    totalCommentsMap[row.post_id] = Number(row.total_comments);
-  });
-
-  // Build final response
-  const response = posts.map((post) => ({
-    ...post,
-    comments: commentsByPost[post.id] || [],
-    total_comments: totalCommentsMap[post.id] || 0,
+  return posts.map((p) => ({
+    ...p,
+    comments: commentsByPost[p.id] || [],
+    total_comments: totalCommentsMap[p.id] || 0,
   }));
-
-  return response;
 }
 
-async function getAllAuthorPosts(
+// Get posts for a specific author
+async function getAuthorPosts(
   authorId,
   limit = 10,
   offset = 0,
   commentLimit = 5
 ) {
-  // Fetch posts for author
+  limit = Math.max(1, Math.min(limit, 50));
+  offset = Math.max(0, offset);
+  commentLimit = Math.max(0, Math.min(commentLimit, 50));
+
   const postsResult = await pool.query(
     `
-    SELECT 
-      p.id, p.title, p.body AS content, p.published_at, p.created_at, p.updated_at,
-      json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS author
+    SELECT p.id, p.title, p.body, p.published_at, p.created_at, p.updated_at,
+           json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS author
     FROM posts p
     JOIN users u ON p.author_id = u.id
     WHERE p.author_id = $1
@@ -351,42 +221,17 @@ async function getAllAuthorPosts(
     `,
     [authorId, limit, offset]
   );
-  const posts = postsResult.rows;
 
+  const posts = postsResult.rows;
   if (posts.length === 0) return [];
 
-  // Fetch comments for these posts
   const postIds = posts.map((p) => p.id);
+  const { commentsByPost } = await fetchComments(postIds, commentLimit);
 
-  const commentsResult = await pool.query(
-    `
-    SELECT c.id, c.post_id, c.body AS content, c.created_at,
-           json_build_object('id', u.id, 'username', u.username) AS author
-    FROM comments c
-    JOIN users u ON c.user_id = u.id
-    WHERE c.post_id = ANY($1)
-    ORDER BY c.created_at DESC
-    `,
-    [postIds]
-  );
-  const allComments = commentsResult.rows;
-
-  // Group comments by post and limit per post
-  const commentsByPost = {};
-  for (const comment of allComments) {
-    if (!commentsByPost[comment.post_id]) commentsByPost[comment.post_id] = [];
-    if (commentsByPost[comment.post_id].length < commentLimit) {
-      commentsByPost[comment.post_id].push(comment);
-    }
-  }
-
-  // Attach comments to posts
-  const finalPosts = posts.map((post) => ({
-    ...post,
-    comments: commentsByPost[post.id] || [],
+  return posts.map((p) => ({
+    ...p,
+    comments: commentsByPost[p.id] || [],
   }));
-
-  return finalPosts;
 }
 
 module.exports = {
@@ -395,6 +240,6 @@ module.exports = {
   updatePost,
   deletePost,
   publishPost,
-  getAllPublishedPosts,
-  getAllAuthorPosts,
+  getPublishedPosts,
+  getAuthorPosts,
 };
