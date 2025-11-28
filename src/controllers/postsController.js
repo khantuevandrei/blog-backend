@@ -1,3 +1,4 @@
+const { off } = require("../app");
 const {
   getPostById: getPostByIdQuery,
   createPost: createPostQuery,
@@ -189,8 +190,15 @@ async function publishPost(req, res) {
 
 async function getAllPublishedPosts(req, res) {
   try {
+    const limit = Number(req.query.limit) || 10;
+    const offset = Number(req.query.offset) || 0;
+    const commentLimit = Number(req.query.commentLimit) || 5;
     // Find published posts
-    const publishedPosts = await getAllPublishedPostsQuery();
+    const publishedPosts = await getAllPublishedPostsQuery(
+      limit,
+      offset,
+      commentLimit
+    );
 
     // Return published posts
     return res.status(200).json(publishedPosts);
@@ -203,9 +211,17 @@ async function getAllPublishedPosts(req, res) {
 async function getAllAuthorPosts(req, res) {
   try {
     const authorId = req.user.id;
+    const limit = Number(req.query.limit) || 10;
+    const offset = Number(req.query.offset) || 0;
+    const commentLimit = Number(req.query.commentLimit) || 5;
 
     // Get all author posts
-    const authorPosts = await getAllAuthorPostsQuery(authorId);
+    const authorPosts = await getAllAuthorPostsQuery(
+      authorId,
+      limit,
+      offset,
+      commentLimit
+    );
 
     // Return author posts
     return res.status(200).json(authorPosts);
