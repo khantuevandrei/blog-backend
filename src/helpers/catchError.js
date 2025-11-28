@@ -1,3 +1,4 @@
+// A central error handler
 function catchError(handler) {
   return async function (req, res, next) {
     try {
