@@ -47,10 +47,10 @@ async function getPostById(postId, commentLimit = 5) {
   const postResult = await pool.query(
     `
     SELECT 
-      p.id, p.title, p.body, p.published_at, p.created_at, p.updated_at,
-      json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS author
+      p.id, p.user_id, p.title, p.body, p.published_at, p.created_at, p.updated_at,
+      json_build_object('id', u.id, 'username', u.username) AS author
     FROM posts p
-    JOIN users u ON p.author_id = u.id
+    JOIN users u ON p.user_id = u.id
     WHERE p.id = $1
     LIMIT 1
     `,
@@ -69,7 +69,7 @@ async function getPostById(postId, commentLimit = 5) {
 async function createPost(authorId, title, body) {
   const postResult = await pool.query(
     `
-    INSERT INTO posts (author_id, title, body)
+    INSERT INTO posts (user_id, title, body)
     VALUES ($1, $2, $3)
     RETURNING id, title, body, published_at, created_at, updated_at
     `,
@@ -79,7 +79,7 @@ async function createPost(authorId, title, body) {
   if (!createdPost) return null;
 
   const authorResult = await pool.query(
-    `SELECT id, username, email FROM users WHERE id = $1 LIMIT 1`,
+    `SELECT id, username FROM users WHERE id = $1 LIMIT 1`,
     [authorId]
   );
   const author = authorResult.rows[0] || null;
@@ -98,7 +98,7 @@ async function updatePost(postId, title, body, commentLimit = 5) {
         body = COALESCE($3, body),
         updated_at = NOW()
     WHERE id = $1
-    RETURNING id, title, body, published_at, created_at, updated_at, author_id
+    RETURNING id, title, body, published_at, created_at, updated_at, user_id
     `,
     [postId, title, body]
   );
@@ -106,8 +106,8 @@ async function updatePost(postId, title, body, commentLimit = 5) {
   if (!updatedPost) return null;
 
   const authorResult = await pool.query(
-    `SELECT id, username, email FROM users WHERE id = $1 LIMIT 1`,
-    [updatedPost.author_id]
+    `SELECT id, username FROM users WHERE id = $1 LIMIT 1`,
+    [updatedPost.user_id]
   );
   const author = authorResult.rows[0] || null;
 
@@ -122,7 +122,7 @@ async function deletePost(postId) {
     `
     DELETE FROM posts
     WHERE id = $1
-    RETURNING id, author_id, title, body, published_at, created_at, updated_at
+    RETURNING id, user_id, title, body, published_at, created_at, updated_at
     `,
     [postId]
   );
@@ -130,8 +130,8 @@ async function deletePost(postId) {
   if (!deletedPost) return null;
 
   const authorResult = await pool.query(
-    `SELECT id, username, email FROM users WHERE id = $1 LIMIT 1`,
-    [deletedPost.author_id]
+    `SELECT id, username FROM users WHERE id = $1 LIMIT 1`,
+    [deletedPost.user_id]
   );
   const author = authorResult.rows[0] || null;
 
@@ -147,7 +147,7 @@ async function publishPost(postId) {
         published_at = NOW(),
         updated_at = NOW()
     WHERE id = $1
-    RETURNING id, author_id, title, body, published_at, created_at, updated_at
+    RETURNING id, user_id, title, body, published_at, created_at, updated_at
     `,
     [postId]
   );
@@ -155,8 +155,8 @@ async function publishPost(postId) {
   if (!publishedPost) return null;
 
   const authorResult = await pool.query(
-    `SELECT id, username, email FROM users WHERE id = $1 LIMIT 1`,
-    [publishedPost.author_id]
+    `SELECT id, username FROM users WHERE id = $1 LIMIT 1`,
+    [publishedPost.user_id]
   );
   const author = authorResult.rows[0] || null;
 
@@ -172,9 +172,9 @@ async function getPublishedPosts(limit = 10, offset = 0, commentLimit = 5) {
   const postsResult = await pool.query(
     `
     SELECT p.id, p.title, p.body, p.created_at, p.updated_at, p.published_at,
-           json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS author
+           json_build_object('id', u.id, 'username', u.username) AS author
     FROM posts p
-    JOIN users u ON p.author_id = u.id
+    JOIN users u ON p.user_id = u.id
     WHERE p.published = TRUE
     ORDER BY p.published_at DESC
     LIMIT $1 OFFSET $2
@@ -212,10 +212,10 @@ async function getAuthorPosts(
   const postsResult = await pool.query(
     `
     SELECT p.id, p.title, p.body, p.published_at, p.created_at, p.updated_at,
-           json_build_object('id', u.id, 'username', u.username, 'email', u.email) AS author
+           json_build_object('id', u.id, 'username', u.username) AS author
     FROM posts p
-    JOIN users u ON p.author_id = u.id
-    WHERE p.author_id = $1
+    JOIN users u ON p.user_id = u.id
+    WHERE p.user_id = $1
     ORDER BY p.created_at DESC
     LIMIT $2 OFFSET $3
     `,

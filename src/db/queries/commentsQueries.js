@@ -24,48 +24,47 @@ async function getCommentById(commentId) {
 
 // Create comment
 async function createComment(postId, userId, body) {
-  const result = await pool.query(
+  const commentResult = await pool.query(
     `
-    INSERT INTO comments (post_id, user_id, body)
-    VALUES ($1, $2, $3)
-    RETURNING 
-      c.id,
-      c.post_id,
-      c.user_id,
-      c.body,
-      c.created_at,
-      c.updated_at,
-      json_build_object('id', u.id, 'username', u.username) AS author
-    FROM comments c
-    JOIN users u ON c.user_id = u.id
-    WHERE c.id = currval('comments_id_seq')
-    `,
+  INSERT INTO comments (post_id, user_id, body)
+  VALUES ($1, $2, $3)
+  RETURNING id, post_id, user_id, body, created_at, updated_at
+  `,
     [postId, userId, body]
   );
-  return result.rows[0] || null;
+  const comment = commentResult.rows[0];
+
+  // fetch author separately
+  const authorResult = await pool.query(
+    `SELECT id, username FROM users WHERE id = $1 LIMIT 1`,
+    [userId]
+  );
+  const author = authorResult.rows[0] || null;
+
+  return { ...comment, author };
 }
 
 // Update comment
 async function updateComment(commentId, body, userId) {
-  const result = await pool.query(
+  const commentResult = await pool.query(
     `
-    UPDATE comments c
-    SET body = $2, updated_at = NOW()
-    WHERE c.id = $1 AND c.user_id = $3
-    RETURNING
-      c.id,
-      c.post_id,
-      c.user_id,
-      c.body,
-      c.created_at,
-      c.updated_at,
-      json_build_object('id', u.id, 'username', u.username) AS author
-    FROM users u
-    WHERE u.id = c.user_id
-    `,
+  UPDATE comments
+  SET body = $2, updated_at = NOW()
+  WHERE id = $1 AND user_id = $3
+  RETURNING id, post_id, user_id, body, created_at, updated_at
+  `,
     [commentId, body, userId]
   );
-  return result.rows[0] || null;
+  const comment = commentResult.rows[0];
+  if (!comment) return null;
+
+  const authorResult = await pool.query(
+    `SELECT id, username FROM users WHERE id = $1 LIMIT 1`,
+    [userId]
+  );
+  const author = authorResult.rows[0] || null;
+
+  return { ...comment, author };
 }
 
 // Delete comment
