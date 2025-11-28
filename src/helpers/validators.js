@@ -17,13 +17,13 @@ function checkId(id, type = "ID") {
 }
 
 // Check if body exists and it is not empty
-function checkBody(body, name = "Body") {
-  if (!body || !body.trim()) {
+function checkTextField(textField, name = "Field") {
+  if (!textField || !textField.trim()) {
     const err = new Error(`${name} is required`);
     err.status = 400;
     throw err;
   }
-  return body.trim();
+  return textField.trim();
 }
 
 // Check if user is authorized to perform a query
@@ -59,7 +59,7 @@ async function checkIfPostExists(id) {
 
 module.exports = {
   checkId,
-  checkBody,
+  checkTextField,
   checkIfAuthorized,
   checkIfCommentExists,
   checkIfPostExists,
