@@ -7,18 +7,46 @@ const {
   getPostComments: getPostCommentsQuery,
 } = require("../db/queries/commentsQueries");
 
+function checkId(id, type = "ID") {
+  // Check if has id
+  if (id === undefined || id === null) {
+    const err = new Error(`${type} is required`);
+    err.status = 400;
+    throw err;
+  }
+  // Check if id is numeric
+  if (isNaN(id)) {
+    const err = new Error(`Invalid ${type}`);
+    err.status = 400;
+    throw err;
+  }
+  return Number(id);
+}
+
+function checkBody(body, name = "Body") {
+  // Check if has body
+  if (!body || !body.trim()) {
+    const err = new Error(`${name} is required`);
+    err.status = 400;
+    throw err;
+  }
+  return body.trim();
+}
+
+function checkIfAuthorized(type, userId) {
+  if (type.user_id !== userId) {
+    const err = new Error("Not authorized");
+    err.status = 403;
+    throw err;
+  }
+}
+
 async function getCommentById(req, res) {
   try {
-    const { commentId } = req.params;
+    const commentId = checkId(req.params.commentId, "Comment ID");
 
-    // Check if comment id is numeric
-    const commentIdNum = Number(commentId);
-    if (isNaN(commentIdNum)) {
-      return res.status(400).json({ message: "Invalid comment ID" });
-    }
-
-    // Find comment
-    const foundComment = await getCommentByIdQuery(commentIdNum);
+    // Check if comment exists
+    const foundComment = await getCommentByIdQuery(commentId);
 
     // If no comment
     if (!foundComment) {
@@ -35,38 +63,18 @@ async function getCommentById(req, res) {
 
 async function createComment(req, res) {
   try {
-    const { postId, body } = req.body;
-
-    // Require post id & content
-    if (!postId || !body) {
-      return res
-        .status(400)
-        .json({ message: "Post id and comment are required" });
-    }
-
-    const trimmedBody = body.trim();
-
-    // Check for empty comment
-    if (!trimmedBody) {
-      return res.status(400).json({ message: "Comment cannot be empty" });
-    }
-
-    // Check if post id is numeric
-    const postIdNum = Number(postId);
-    if (isNaN(postIdNum)) {
-      return res.status(400).json({ message: "Invalid post id" });
-    }
+    const postId = checkId(req.body.postId, "Post ID");
+    const body = checkBody(req.body.body, "Comment");
+    const userId = req.user.id;
 
     // Check if post exists
-    const post = await getPostById(postIdNum);
+    const post = await getPostById(postId);
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    const userId = req.user.id;
-
     // Create comment
-    const comment = await createCommentQuery(postIdNum, userId, trimmedBody);
+    const comment = await createCommentQuery(postId, userId, body);
 
     // Return comment
     return res.status(201).json(comment);
@@ -78,50 +86,20 @@ async function createComment(req, res) {
 
 async function updateComment(req, res) {
   try {
-    const { commentId } = req.params;
-    const { body } = req.body;
-
-    // Require comment id and body
-    if (!commentId || !body) {
-      return res
-        .status(400)
-        .json({ message: "Comment id and comment are required" });
-    }
-
-    // Check if comment id is numeric
-    const commentIdNum = Number(commentId);
-    if (isNaN(commentIdNum)) {
-      return res.status(400).json({ message: "Invalid comment id" });
-    }
-
-    const trimmedBody = body.trim();
-
-    // Check for empty comment
-    if (!trimmedBody) {
-      return res.status(400).json({ message: "Comment cannot be empty" });
-    }
-
+    const commentId = checkId(req.params.commentId, "Comment ID");
+    const body = checkBody(req.body.body, "Comment");
     const userId = req.user.id;
 
     // Check if comment exists
-    const existingComment = await getCommentByIdQuery(commentIdNum);
+    const existingComment = await getCommentByIdQuery(commentId);
     if (!existingComment) {
       return res.status(404).json({ message: "Comment not found" });
     }
 
-    // Check if authorized to update
-    if (existingComment.user_id !== userId) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to update this comment" });
-    }
+    checkIfAuthorized(existingComment, userId);
 
     // Update comment
-    const updatedComment = await updateCommentQuery(
-      commentIdNum,
-      trimmedBody,
-      userId
-    );
+    const updatedComment = await updateCommentQuery(commentId, body, userId);
 
     // Return updated comment
     return res.status(200).json(updatedComment);
@@ -133,36 +111,19 @@ async function updateComment(req, res) {
 
 async function deleteComment(req, res) {
   try {
-    const { commentId } = req.params;
-
-    // Require comment id
-    if (!commentId) {
-      return res.status(400).json({ message: "Comment id is required" });
-    }
-
-    // Check if comment id is numeric
-    const commentIdNum = Number(commentId);
-    if (isNaN(commentIdNum)) {
-      return res.status(400).json({ message: "Invalid comment id" });
-    }
+    const commentId = checkId(req.params.commentId, "Comment ID");
+    const userId = req.user.id;
 
     // Check if comment exists
-    const comment = await getCommentByIdQuery(commentIdNum);
+    const comment = await getCommentByIdQuery(commentId);
     if (!comment) {
       return res.status(404).json({ message: "Comment not found" });
     }
 
-    const userId = req.user.id;
-
-    // Check if authorized to delete
-    if (comment.user_id !== userId) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to delete this comment" });
-    }
+    checkIfAuthorized(comment, userId);
 
     // Delete comment
-    const deletedComment = await deleteCommentQuery(commentIdNum);
+    const deletedComment = await deleteCommentQuery(commentId, userId);
 
     // Return deleted comment
     return res.status(200).json(deletedComment);
@@ -174,27 +135,18 @@ async function deleteComment(req, res) {
 
 async function getPostComments(req, res) {
   try {
-    const { postId } = req.params;
-
-    // Require post id
-    if (!postId) {
-      return res.status(400).json({ message: "Post id is required" });
-    }
-
-    // Check if post id is numeric
-    const postIdNum = Number(postId);
-    if (isNaN(postIdNum)) {
-      return res.status(400).json({ message: "Invalid post id" });
-    }
+    const limit = Number(req.query.limit) || 5;
+    const offset = Number(req.query.offset) || 0;
+    const postId = checkId(req.params.postId, "Post ID");
 
     // Check if post exists
-    const post = await getPostById(postIdNum);
+    const post = await getPostById(postId);
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
     }
 
     // Find comments
-    const postComments = await getPostCommentsQuery(postIdNum);
+    const postComments = await getPostCommentsQuery(postId, limit, offset);
 
     // Return comments
     return res.status(200).json(postComments);

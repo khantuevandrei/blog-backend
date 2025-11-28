@@ -40,9 +40,10 @@ async function createComment(postId, userId, body) {
   );
   const author = authorResult.rows[0] || null;
 
-  comment.author = author;
-
-  return comment;
+  return {
+    ...comment,
+    author: author,
+  };
 }
 
 async function updateComment(commentId, body, userId) {
@@ -64,9 +65,10 @@ async function updateComment(commentId, body, userId) {
   );
   const author = authorResult.rows[0] || null;
 
-  comment.author = author;
-
-  return comment;
+  return {
+    ...comment,
+    author: author,
+  };
 }
 
 async function deleteComment(commentId, userId) {
@@ -87,9 +89,10 @@ async function deleteComment(commentId, userId) {
   );
   const author = authorResult.rows[0] || null;
 
-  comment.author = author;
-
-  return comment;
+  return {
+    ...comment,
+    author: author,
+  };
 }
 
 async function getPostComments(postId, limit = 5, offset = 0) {
