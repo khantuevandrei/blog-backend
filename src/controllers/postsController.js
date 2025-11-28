@@ -10,8 +10,8 @@ const {
   updatePost: updatePostQuery,
   deletePost: deletePostQuery,
   publishPost: publishPostQuery,
-  getAllPublishedPosts: getAllPublishedPostsQuery,
-  getAllAuthorPosts: getAllAuthorPostsQuery,
+  getPublishedPosts: getPublishedPostsQuery,
+  getAuthorPosts: getAuthorPostsQuery,
 } = require("../db/queries/postsQueries");
 
 // Get a single post by ID
@@ -107,7 +107,7 @@ async function getPublishedPosts(req, res) {
   const offset = Number(req.query.offset) || 0;
   const commentLimit = Number(req.query.commentLimit) || 5;
 
-  const publishedPosts = await getAllPublishedPostsQuery(
+  const publishedPosts = await getPublishedPostsQuery(
     limit,
     offset,
     commentLimit
@@ -125,7 +125,7 @@ async function getAuthorPosts(req, res) {
   const offset = Number(req.query.offset) || 0;
   const commentLimit = Number(req.query.commentLimit) || 5;
 
-  const authorPosts = await getAllAuthorPostsQuery(
+  const authorPosts = await getAuthorPostsQuery(
     authorId,
     limit,
     offset,
