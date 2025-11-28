@@ -13,13 +13,9 @@ const router = express.Router();
 const authenticateJWT = passport.authenticate("jwt", { session: false });
 
 router.post("/", authenticateJWT, createComment);
-
 router.get("/post/:postId", getPostComments);
-
 router.get("/:commentId", getCommentById);
-
 router.put("/:commentId", authenticateJWT, updateComment);
-
 router.delete("/:commentId", authenticateJWT, deleteComment);
 
 module.exports = router;
