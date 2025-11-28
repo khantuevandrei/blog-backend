@@ -110,7 +110,7 @@ async function getPostComments(postId, limit = 5, offset = 0) {
     FROM comments c
     JOIN users u ON c.user_id = u.id
     WHERE c.post_id = $1
-    ORDER BY c.reated_at DESC
+    ORDER BY c.created_at DESC
     LIMIT $2 OFFSET $3
     `,
     [postId, limit, offset]
