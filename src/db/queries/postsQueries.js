@@ -135,15 +135,52 @@ async function updatePost(postId, title, body) {
 }
 
 async function deletePost(postId) {
-  const result = await pool.query(
+  const postResult = await pool.query(
+    `
+    SELECT id, author_id, title, body, published_at, created_at, updated_at
+    FROM posts
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [postId]
+  );
+  const post = postResult.rows[0];
+  if (!post) return null;
+
+  const deletedResult = await pool.query(
     `
     DELETE FROM posts
     WHERE id = $1
     RETURNING id, author_id, title, body, published_at, created_at, updated_at
-  `,
+    `,
     [postId]
   );
-  return result.rows[0] || null;
+  const deletedPost = deletedResult.rows[0];
+  if (!deletedPost) return null;
+
+  const authorResult = await pool.query(
+    `
+    SELECT id, username, email
+    FROM users
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [deletedPost.author_id]
+  );
+  const author = authorResult.rows[0] || null;
+
+  const comments = [];
+
+  return {
+    id: deletedPost.id,
+    title: deletedPost.title,
+    content: deletedPost.body,
+    created_at: deletedPost.created_at,
+    updated_at: deletedPost.updated_at,
+    published_at: deletedPost.published_at,
+    author,
+    comments,
+  };
 }
 
 async function publishPost(postId) {
