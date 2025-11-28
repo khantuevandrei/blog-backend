@@ -3,10 +3,20 @@ const pool = require("../pool");
 async function getCommentById(commentId) {
   const result = await pool.query(
     `
-    SELECT id, post_id, user_id, body, created_at, updated_at
-    FROM comments
-    WHERE id = $1 
-  `,
+    SELECT
+      c.id,
+      c.body,
+      c.created_at,
+      c.updated_at,
+      json_build_object(
+        'id', 'u.id',
+        'username', 'u.username'
+      ) AS author
+    FROM comments c 
+    JOIN users u ON c.user_id = u.id
+    WHERE c.id = $1
+    LIMIT 1
+    `,
     [commentId]
   );
   return result.rows[0] || null;
