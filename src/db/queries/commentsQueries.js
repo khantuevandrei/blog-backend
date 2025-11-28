@@ -23,7 +23,7 @@ async function getCommentById(commentId) {
 }
 
 async function createComment(postId, userId, body) {
-  const result = await pool.query(
+  const commentResult = await pool.query(
     `
     INSERT INTO comments (post_id, user_id, body)
     VALUES ($1, $2, $3)
@@ -31,7 +31,18 @@ async function createComment(postId, userId, body) {
   `,
     [postId, userId, body]
   );
-  return result.rows[0] || null;
+  const comment = commentResult.rows[0];
+  if (!comment) return null;
+
+  const authorResult = await pool.query(
+    `SELECT id, username FROM users WHERE id  = $1 LIMIT 1`,
+    [userId]
+  );
+  const author = authorResult.rows[0] || null;
+
+  comment.author = author;
+
+  return comment;
 }
 
 async function updateComment(commentId, body, userId) {
