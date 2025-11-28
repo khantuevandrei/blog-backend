@@ -17,7 +17,7 @@ const {
 // Get a single post by ID
 // - Validates postId
 // - Ensures the post exists
-// - Returns post object with comments
+// - Returns post with comments
 
 async function getPostById(req, res) {
   const postId = checkId(req.params.postId, "Post ID");
@@ -100,7 +100,7 @@ async function publishPost(req, res) {
 
 // Get published posts with pagination
 // - Supports limit, offset, and commentLimit
-// - Returns list of published posts with nested comments
+// - Returns published posts with nested comments
 
 async function getPublishedPosts(req, res) {
   const limit = Number(req.query.limit) || 10;
@@ -116,7 +116,7 @@ async function getPublishedPosts(req, res) {
 }
 
 // Get posts created by the author
-// - Supports pagination + optional commentLimit
+// - Supports pagination
 // - Returns author's posts
 
 async function getAuthorPosts(req, res) {
