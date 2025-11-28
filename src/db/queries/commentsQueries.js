@@ -9,8 +9,8 @@ async function getCommentById(commentId) {
       c.created_at,
       c.updated_at,
       json_build_object(
-        'id', 'u.id',
-        'username', 'u.username'
+        'id', u.id,
+        'username', u.username
       ) AS author
     FROM comments c 
     JOIN users u ON c.user_id = u.id
@@ -92,15 +92,25 @@ async function deleteComment(commentId, userId) {
   return comment;
 }
 
-async function getPostComments(postId) {
+async function getPostComments(postId, limit = 5, offset = 0) {
   const result = await pool.query(
     `
-    SELECT id, post_id, user_id, body, created_at, updated_at
-    FROM comments
-    WHERE post_id = $1
-    ORDER BY created_at DESC
-  `,
-    [postId]
+    SELECT
+      c.id,
+      c.body,
+      c.created_at,
+      c.updated_at,
+      json_build_object(
+        'id', u.id,
+        'username', u.username
+      ) AS author
+    FROM comments c
+    JOIN users u ON c.user_id = u.id
+    WHERE c.post_id = $1
+    ORDER BY c.reated_at DESC
+    LIMIT $2 OFFSET $3
+    `,
+    [postId, limit, offset]
   );
   return result.rows;
 }
