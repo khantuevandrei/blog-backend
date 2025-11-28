@@ -54,6 +54,7 @@ async function checkIfPostExists(id) {
     err.status = 404;
     throw err;
   }
+  return post;
 }
 
 module.exports = {
