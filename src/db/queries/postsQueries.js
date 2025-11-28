@@ -56,15 +56,38 @@ async function getPostById(postId) {
 }
 
 async function createPost(authorId, title, body) {
-  const result = await pool.query(
+  const postResult = await pool.query(
     `
     INSERT INTO posts (author_id, title, body)
     VALUES ($1, $2, $3)
     RETURNING id, author_id, title, body, published_at, created_at, updated_at
-  `,
+    `,
     [authorId, title, body]
   );
-  return result.rows[0] || null;
+  const post = postResult.rows[0];
+  if (!post) return null;
+
+  const authorResult = await pool.query(
+    `
+    SELECT id, username, email
+    FROM users
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [authorId]
+  );
+  const author = authorResult.rows[0];
+
+  return {
+    id: post.id,
+    title: post.title,
+    content: post.body,
+    created_at: post.created_at,
+    updated_at: post.updated_at,
+    published_at: post.published_at,
+    author: author || null,
+    comments: [],
+  };
 }
 
 async function updatePost(postId, title, body) {
