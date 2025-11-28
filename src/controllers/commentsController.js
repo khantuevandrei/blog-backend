@@ -7,6 +7,7 @@ const {
   getPostComments: getPostCommentsQuery,
 } = require("../db/queries/commentsQueries");
 
+// Helper functions
 function checkId(id, type = "ID") {
   // Check if has id
   if (id === undefined || id === null) {
@@ -41,6 +42,7 @@ function checkIfAuthorized(type, userId) {
   }
 }
 
+// Main functions
 async function getCommentById(req, res) {
   try {
     const commentId = checkId(req.params.commentId, "Comment ID");
