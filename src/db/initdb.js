@@ -3,27 +3,28 @@ require("dotenv").config();
 const { Client } = require("pg");
 
 const SQL = `
-  DROP TABLE IF EXISTS comments;
-  DROP TABLE IF EXISTS posts;
-  DROP TABLE IF EXISTS users;
+  DROP TABLE IF EXISTS comments CASCADE;
+  DROP TABLE IF EXISTS posts CASCADE;
+  DROP TABLE IF EXISTS users CASCADE;
   
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(255) DEFAULT 'user',
-    created_at TIMESTAMP DEFAULT NOW()
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role VARCHAR(20) DEFAULT 'user',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
   );
   
   CREATE TABLE IF NOT EXISTS posts (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
+    title TEXT NOT NULL,
     body TEXT NOT NULL,
-    published BOOLEAN DEFAULT false,
-    published_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP
+    published BOOLEAN DEFAULT FALSE,
+    published_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
   );
 
   CREATE TABLE IF NOT EXISTS comments (
@@ -31,10 +32,10 @@ const SQL = `
     post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     body TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
   );
-  `;
+`;
 
 async function initdb() {
   console.log("Seeding...");
