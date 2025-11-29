@@ -6,18 +6,21 @@ const jwt = require("jsonwebtoken");
 const { createUser } = require("../db/queries/usersQueries");
 const catchError = require("../helpers/catchError");
 const {
-  checkUsername,
+  validateUsername,
   checkIfUsernameTaken,
   sanitizeUser,
-  checkPassword,
-} = require("../helpers/validators/userInfo");
+  validatePassword,
+} = require("../helpers/validators/users");
 
 // Register user
 async function registerUser(req, res) {
-  const username = checkUsername(req.body.username);
+  const username = validateUsername(req.body.username);
   await checkIfUsernameTaken(username);
 
-  const password = checkPassword(req.body.password, req.body.confirmPassword);
+  const password = validatePassword(
+    req.body.password,
+    req.body.confirmPassword
+  );
   const password_hash = await bcrypt.hash(password, 10);
   const userInfo = await createUser(username, password_hash);
   const sanitizedUserInfo = sanitizeUser(userInfo);
