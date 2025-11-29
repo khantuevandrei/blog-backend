@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const { Client } = require("pg");
+const pool = require("./pool");
 
 const SQL = `
   DROP TABLE IF EXISTS comments CASCADE;
@@ -38,26 +38,15 @@ const SQL = `
 `;
 
 async function initdb() {
-  console.log("Seeding...");
-
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl:
-      process.env.NODE_ENV === "production"
-        ? { rejectUnauthorized: false }
-        : false,
-  });
-
   try {
-    await client.connect();
-    console.log("Connected to DB");
+    console.log("Seeding...");
 
-    await client.query(SQL);
+    await pool.query(SQL);
     console.log("Tables created successfully");
   } catch (err) {
     console.error("Error creating tables", err);
   } finally {
-    await client.end();
+    await pool.end();
     console.log("Seeding done");
   }
 }
