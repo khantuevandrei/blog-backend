@@ -1,70 +1,31 @@
 require("dotenv").config();
-
 require("../config/passport-local");
 const passport = require("passport");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { createUser } = require("../db/queries/usersQueries");
+const catchError = require("../helpers/catchError");
 const {
-  createUser,
-  findUserByUsername,
-} = require("../db/queries/usersQueries");
+  checkUsername,
+  checkIfUsernameTaken,
+  sanitizeUser,
+  checkPassword,
+} = require("../helpers/validators/userInfo");
 
+// Register user
 async function registerUser(req, res) {
-  const { username, password, confirmPassword } = req.body;
+  const username = checkUsername(req.body.username);
+  await checkIfUsernameTaken(username);
 
-  // Require username & password
-  if (!username || !password) {
-    return res
-      .status(400)
-      .json({ message: "Username and password are required" });
-  }
+  const password = checkPassword(req.body.password, req.body.confirmPassword);
+  const password_hash = await bcrypt.hash(password, 10);
+  const userInfo = await createUser(username, password_hash);
+  const sanitizedUserInfo = sanitizeUser(userInfo);
 
-  // Check username
-  const normalizedUsername = username.trim().toLowerCase();
-  if (normalizedUsername === "") {
-    return res.status(400).json({ message: "Username cannot be empty" });
-  }
-
-  const usernameRegex = /^[a-z0-9_]+$/;
-  if (!usernameRegex.test(normalizedUsername)) {
-    return res.status(400).json({
-      message: "Username may only contain letters, numbers, or underscores",
-    });
-  }
-
-  // Check password
-  const passwordRegex =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};:"\\|,.<>\/?]).{8,}$/;
-  if (!passwordRegex.test(password)) {
-    return res.status(400).json({
-      message:
-        "Password must be at least 8 characters long and include lowercase, uppercase, number and symbol",
-    });
-  }
-
-  if (password !== confirmPassword) {
-    return res.status(400).json({ message: "Passwords do not match" });
-  }
-
-  try {
-    // Check if username already exists
-    const existingUser = await findUserByUsername(normalizedUsername);
-    if (existingUser) {
-      return res.status(409).json({ message: "User already exists" });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    // Create user
-    const userInfo = await createUser(normalizedUsername, hashedPassword);
-    // Return user info
-    return res.status(201).json(userInfo);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error" });
-  }
+  return res.status(201).json(sanitizedUserInfo);
 }
 
+// Login user
 function loginUser(req, res, next) {
   passport.authenticate("local", { session: false }, (err, user, info) => {
     if (err) return next(err);
@@ -77,11 +38,7 @@ function loginUser(req, res, next) {
     }
 
     // Sanitize user, don't send password
-    const sanitizedUser = {
-      id: user.id,
-      username: user.username,
-      role: user.role,
-    };
+    const sanitizedUser = sanitizeUser(user);
 
     // Sign JWT
     const token = jwt.sign(sanitizedUser, process.env.JWT_SECRET, {
@@ -93,4 +50,4 @@ function loginUser(req, res, next) {
   })(req, res, next);
 }
 
-module.exports = { registerUser, loginUser };
+module.exports = { registerUser: catchError(registerUser), loginUser };
