@@ -1,24 +1,21 @@
+const { findUserByUsername } = require("../../db/queries/usersQueries");
+
 function checkUsername(username) {
-  // Require username & password
+  // Require username
   if (!username) {
     const err = new Error("Username is required");
     err.status = 400;
     throw err;
   }
 
-  // Normalize username
+  // Normalize
   const normalizedUsername = username.trim().toLowerCase();
-  if (normalizedUsername === "") {
-    const err = new Error("Username cannot be empty");
-    err.status = 400;
-    throw err;
-  }
 
   // Require pattern
-  const usernameRegex = /^[a-z0-9_]+$/;
+  const usernameRegex = /^[a-z0-9_]{3,}$/;
   if (!usernameRegex.test(normalizedUsername)) {
     const err = new Error(
-      "Username may only contain letters, numbers, or underscores"
+      "Username must be at least 3 characters long and may only contain letters, numbers, or underscores"
     );
     err.status = 400;
     throw err;
@@ -27,7 +24,29 @@ function checkUsername(username) {
   return normalizedUsername;
 }
 
+async function checkIfUsernameTaken(username) {
+  const existingUser = await findUserByUsername(username);
+  if (existingUser) {
+    const err = new Error("Username taken");
+    err.status = 409;
+    throw err;
+  }
+}
+
+function sanitizeUser(user) {
+  // Remove password
+  const { password_hash, ...safeUser } = user;
+  return safeUser;
+}
+
 function checkPassword(password, confirmPassword) {
+  // Require password
+  if (!password) {
+    const err = new Error("Password is required");
+    err.status = 400;
+    throw err;
+  }
+
   // Require pattern
   const passwordRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};:"\\|,.<>\/?]).{8,}$/;
@@ -51,5 +70,7 @@ function checkPassword(password, confirmPassword) {
 
 module.exports = {
   checkUsername,
+  checkIfUsernameTaken,
+  sanitizeUser,
   checkPassword,
 };
