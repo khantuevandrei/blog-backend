@@ -10,7 +10,7 @@ const {
 } = require("../db/queries/usersQueries");
 
 async function registerUser(req, res) {
-  const { username, password } = req.body;
+  const { username, password, confirmPassword } = req.body;
 
   // Require username & password
   if (!username || !password) {
@@ -40,6 +40,10 @@ async function registerUser(req, res) {
       message:
         "Password must be at least 8 characters long and include lowercase, uppercase, number and symbol",
     });
+  }
+
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: "Passwords do not match" });
   }
 
   try {
