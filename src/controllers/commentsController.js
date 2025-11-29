@@ -32,7 +32,7 @@ async function getCommentById(req, res) {
 // - Returns created comment
 
 async function createComment(req, res) {
-  const postId = checkId(req.body.postId, "Post ID");
+  const postId = checkId(req.params.postId, "Post ID");
   const body = checkTextField(req.body.body, "Comment");
   const userId = req.user.id;
 
