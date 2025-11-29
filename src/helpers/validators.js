@@ -57,10 +57,19 @@ async function checkIfPostExists(id) {
   return post;
 }
 
+function checkIfCommentBelongsToPost(comment, postId) {
+  if (comment.post_id !== postId) {
+    const err = new Error("Comment not found for this post");
+    err.status = 404;
+    throw err;
+  }
+}
+
 module.exports = {
   checkId,
   checkTextField,
   checkIfAuthorized,
   checkIfCommentExists,
   checkIfPostExists,
+  checkIfCommentBelongsToPost,
 };
