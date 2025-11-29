@@ -5,6 +5,7 @@ const {
   checkIfAuthorized,
   checkIfCommentExists,
   checkIfPostExists,
+  checkIfCommentBelongsToPost,
 } = require("../helpers/validators");
 const {
   createComment: createCommentQuery,
@@ -19,9 +20,11 @@ const {
 // - Returns the comment
 
 async function getCommentById(req, res) {
+  const postId = checkId(req.params.postId, "Post ID");
   const commentId = checkId(req.params.commentId, "Comment ID");
 
   const foundComment = await checkIfCommentExists(commentId);
+  checkIfCommentBelongsToPost(foundComment, postId);
 
   return res.status(200).json(foundComment);
 }
@@ -48,11 +51,13 @@ async function createComment(req, res) {
 // - Returns updated comment
 
 async function updateComment(req, res) {
+  const postId = checkId(req.params.postId, "Post ID");
   const commentId = checkId(req.params.commentId, "Comment ID");
   const body = checkTextField(req.body.body, "Comment");
   const userId = req.user.id;
 
   const foundComment = await checkIfCommentExists(commentId);
+  checkIfCommentBelongsToPost(foundComment, postId);
   checkIfAuthorized(foundComment, userId);
 
   const updatedComment = await updateCommentQuery(commentId, body, userId);
@@ -65,10 +70,12 @@ async function updateComment(req, res) {
 // - Returns deleted comment
 
 async function deleteComment(req, res) {
+  const postId = checkId(req.params.postId, "Post ID");
   const commentId = checkId(req.params.commentId, "Comment ID");
   const userId = req.user.id;
 
   const foundComment = await checkIfCommentExists(commentId);
+  checkIfCommentBelongsToPost(foundComment, postId);
   checkIfAuthorized(foundComment, userId);
 
   const deletedComment = await deleteCommentQuery(commentId, userId);
