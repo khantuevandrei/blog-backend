@@ -3,7 +3,6 @@ const cors = require("cors");
 const helmet = require("helmet");
 const authRouter = require("./routes/authRouter");
 const postsRouter = require("./routes/postsRouter");
-const commentsRouter = require("./routes/commentsRouter");
 const passport = require("passport");
 
 const app = express();
@@ -18,7 +17,6 @@ app.use(passport.initialize());
 // Routes
 app.use("/api/auth", authRouter);
 app.use("/api/posts", postsRouter);
-app.use("/api/comments", commentsRouter);
 
 // Root route
 app.get("/", (req, res) => res.send("Welcome"));
