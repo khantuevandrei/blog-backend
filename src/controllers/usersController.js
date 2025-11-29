@@ -1,15 +1,14 @@
 const bcrypt = require("bcryptjs");
 const catchError = require("../helpers/catchError");
+const { checkId } = require("../helpers/validators/general");
+const { checkIfAdminOrSelf } = require("../helpers/validators/authorization");
 const {
-  checkId,
-  checkIfAdminOrSelf,
   checkIfUserExists,
-  sanitizeUser,
-} = require("../helpers/validators");
-const {
   checkUsername,
+  checkIfUsernameTaken,
+  sanitizeUser,
   checkPassword,
-} = require("../helpers/validators/userInfo");
+} = require("../helpers/validators/users");
 const {
   updateUserById,
   deleteUserById,
@@ -41,7 +40,9 @@ async function updateUser(req, res) {
 
   // Username update
   if (req.body.username) {
-    updateFields.username = checkUsername(req.body.username);
+    const username = checkUsername(req.body.username);
+    await checkIfUsernameTaken(username);
+    updateFields.username = username;
   }
   // Password update
   if (req.body.password) {
