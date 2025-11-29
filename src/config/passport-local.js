@@ -12,7 +12,9 @@ passport.use(
     },
     async (username, password, done) => {
       try {
-        const user = await findUserByUsername(username);
+        const normalizedUsername = username.trim().toLowerCase();
+
+        const user = await findUserByUsername(normalizedUsername);
         if (!user) return done(null, false, { message: "Incorrect username" });
 
         const match = await bcrypt.compare(password, user.password_hash);
