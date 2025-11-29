@@ -19,7 +19,28 @@ async function registerUser(req, res) {
       .json({ message: "Username and password are required" });
   }
 
+  // Check username
   const normalizedUsername = username.trim().toLowerCase();
+  if (normalizedUsername === "") {
+    return res.status(400).json({ message: "Username cannot be empty" });
+  }
+
+  const usernameRegex = /^[a-z0-9_]+$/;
+  if (!usernameRegex.test(normalizedUsername)) {
+    return res.status(400).json({
+      message: "Username may only contain letters, numbers, or underscores",
+    });
+  }
+
+  // Check password
+  const passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};:"\\|,.<>\/?]).{8,}$/;
+  if (!passwordRegex.test(password)) {
+    return res.status(400).json({
+      message:
+        "Password must be at least 8 characters long and include lowercase, uppercase, number and symbol",
+    });
+  }
 
   try {
     // Check if username already exists
