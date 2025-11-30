@@ -47,7 +47,7 @@ async function getPostById(postId, commentLimit = 5) {
   const postResult = await pool.query(
     `
     SELECT 
-      p.id, p.user_id, p.title, p.body, p.published_at, p.created_at, p.updated_at,
+      p.id, p.user_id, p.title, p.body, p.published, p.published_at, p.created_at, p.updated_at,
       json_build_object('id', u.id, 'username', u.username) AS author
     FROM posts p
     JOIN users u ON p.user_id = u.id
@@ -60,9 +60,16 @@ async function getPostById(postId, commentLimit = 5) {
   const post = postResult.rows[0];
   if (!post) return null;
 
-  const { commentsByPost } = await fetchComments([postId], commentLimit);
+  const { commentsByPost, totalCommentsMap } = await fetchComments(
+    [postId],
+    commentLimit
+  );
 
-  return { ...post, comments: commentsByPost[postId] || [] };
+  return {
+    ...post,
+    comments: commentsByPost[postId] || [],
+    total_comments: totalCommentsMap[postId] || 0,
+  };
 }
 
 // Create a new post
@@ -71,7 +78,7 @@ async function createPost(authorId, title, body) {
     `
     INSERT INTO posts (user_id, title, body)
     VALUES ($1, $2, $3)
-    RETURNING id, title, body, published_at, created_at, updated_at
+    RETURNING id, title, body, published, published_at, created_at, updated_at
     `,
     [authorId, title, body]
   );
@@ -84,7 +91,12 @@ async function createPost(authorId, title, body) {
   );
   const author = authorResult.rows[0] || null;
 
-  return { ...createdPost, author, comments: [] };
+  return {
+    ...createdPost,
+    author,
+    comments: [],
+    total_comments: 0,
+  };
 }
 
 // Update post and fetch optional comments
@@ -98,7 +110,7 @@ async function updatePost(postId, title, body, commentLimit = 5) {
         body = COALESCE($3, body),
         updated_at = NOW()
     WHERE id = $1
-    RETURNING id, title, body, published_at, created_at, updated_at, user_id
+    RETURNING id, title, body, published, published_at, created_at, updated_at, user_id
     `,
     [postId, title, body]
   );
@@ -111,9 +123,17 @@ async function updatePost(postId, title, body, commentLimit = 5) {
   );
   const author = authorResult.rows[0] || null;
 
-  const { commentsByPost } = await fetchComments([postId], commentLimit);
+  const { commentsByPost, totalCommentsMap } = await fetchComments(
+    [postId],
+    commentLimit
+  );
 
-  return { ...updatedPost, author, comments: commentsByPost[postId] || [] };
+  return {
+    ...updatedPost,
+    author,
+    comments: commentsByPost[postId] || [],
+    total_comments: totalCommentsMap[postId] || 0,
+  };
 }
 
 // Delete post
@@ -135,7 +155,12 @@ async function deletePost(postId) {
   );
   const author = authorResult.rows[0] || null;
 
-  return { ...deletedPost, author, comments: [] };
+  return {
+    ...deletedPost,
+    author,
+    comments: [],
+    total_comments: 0,
+  };
 }
 
 // Publish post
@@ -147,7 +172,7 @@ async function publishPost(postId) {
         published_at = NOW(),
         updated_at = NOW()
     WHERE id = $1
-    RETURNING id, user_id, title, body, published_at, created_at, updated_at
+    RETURNING id, user_id, title, body, published, published_at, created_at, updated_at
     `,
     [postId]
   );
@@ -160,7 +185,12 @@ async function publishPost(postId) {
   );
   const author = authorResult.rows[0] || null;
 
-  return { ...publishedPost, author, comments: [] };
+  return {
+    ...publishedPost,
+    author,
+    comments: [],
+    total_comments: 0,
+  };
 }
 
 // Get published posts with comments
@@ -171,7 +201,7 @@ async function getPublishedPosts(limit = 10, offset = 0, commentLimit = 5) {
 
   const postsResult = await pool.query(
     `
-    SELECT p.id, p.title, p.body, p.created_at, p.updated_at, p.published_at,
+    SELECT p.id, p.title, p.body, p.published, p.published_at, p.created_at, p.updated_at, 
            json_build_object('id', u.id, 'username', u.username) AS author
     FROM posts p
     JOIN users u ON p.user_id = u.id
@@ -211,7 +241,7 @@ async function getAuthorPosts(
 
   const postsResult = await pool.query(
     `
-    SELECT p.id, p.title, p.body, p.published_at, p.created_at, p.updated_at,
+    SELECT p.id, p.title, p.body, p.published, p.published_at, p.created_at, p.updated_at,
            json_build_object('id', u.id, 'username', u.username) AS author
     FROM posts p
     JOIN users u ON p.user_id = u.id
@@ -226,11 +256,15 @@ async function getAuthorPosts(
   if (posts.length === 0) return [];
 
   const postIds = posts.map((p) => p.id);
-  const { commentsByPost } = await fetchComments(postIds, commentLimit);
+  const { commentsByPost, totalCommentsMap } = await fetchComments(
+    postIds,
+    commentLimit
+  );
 
   return posts.map((p) => ({
     ...p,
     comments: commentsByPost[p.id] || [],
+    total_comments: totalCommentsMap[p.id] || 0,
   }));
 }
 
