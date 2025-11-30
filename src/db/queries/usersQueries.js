@@ -60,22 +60,22 @@ async function getUserPostCount(userId) {
 }
 
 async function updateUserById(userId, fields) {
-  const fields = [];
+  const setClauses = [];
   const values = [];
   let idx = 1;
 
   for (const key in fields) {
-    fields.push(`${key} = $${idx}`);
+    setClauses.push(`${key} = $${idx}`);
     values.push(fields[key]);
     idx++;
   }
 
-  if (fields.length === 0) return null;
+  if (setClauses.length === 0) return null;
 
   values.push(userId); // for WHERE clause
   const query = `
     UPDATE users
-    SET ${fields.join(", ")}, updated_at = NOW()
+    SET ${setClauses.join(", ")}, updated_at = NOW()
     WHERE id = $${idx}
     RETURNING id, username, role, created_at, updated_at
   `;
