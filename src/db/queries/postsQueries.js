@@ -73,21 +73,21 @@ async function getPostById(postId, commentLimit = 5) {
 }
 
 // Create a new post
-async function createPost(authorId, title, body) {
+async function createPost(userId, title, body) {
   const postResult = await pool.query(
     `
     INSERT INTO posts (user_id, title, body)
     VALUES ($1, $2, $3)
     RETURNING id, title, body, published, published_at, created_at, updated_at
     `,
-    [authorId, title, body]
+    [userId, title, body]
   );
   const createdPost = postResult.rows[0];
   if (!createdPost) return null;
 
   const authorResult = await pool.query(
     `SELECT id, username FROM users WHERE id = $1 LIMIT 1`,
-    [authorId]
+    [userId]
   );
   const author = authorResult.rows[0] || null;
 
@@ -229,11 +229,12 @@ async function getPublishedPosts(limit = 10, offset = 0, commentLimit = 5) {
 }
 
 // Get posts for a specific author
-async function getAuthorPosts(
-  authorId,
+async function getUserPosts(
+  userId,
   limit = 10,
   offset = 0,
-  commentLimit = 5
+  commentLimit = 5,
+  includeUnpublished = false
 ) {
   limit = Math.max(1, Math.min(limit, 50));
   offset = Math.max(0, offset);
@@ -246,10 +247,11 @@ async function getAuthorPosts(
     FROM posts p
     JOIN users u ON p.user_id = u.id
     WHERE p.user_id = $1
+      AND (p.published = true OR $4 = true)
     ORDER BY p.created_at DESC
     LIMIT $2 OFFSET $3
     `,
-    [authorId, limit, offset]
+    [userId, limit, offset, includeUnpublished]
   );
 
   const posts = postsResult.rows;
@@ -275,5 +277,5 @@ module.exports = {
   deletePost,
   publishPost,
   getPublishedPosts,
-  getAuthorPosts,
+  getUserPosts,
 };

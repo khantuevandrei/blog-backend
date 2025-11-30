@@ -14,6 +14,9 @@ const {
   updateUserById,
   deleteUserById,
 } = require("../db/queries/usersQueries");
+const {
+  getUserPosts: getUserPostsQuery,
+} = require("../db/queries/postsQueries");
 
 // Find user
 async function getUser(req, res) {
@@ -76,8 +79,29 @@ async function deleteUser(req, res) {
   return res.status(200).json(sanitizedUser);
 }
 
+// Get user's posts
+async function getUserPosts(req, res) {
+  const userId = checkId(req.params.userId, "User ID");
+  const limit = Number(req.query.limit) || 10;
+  const offset = Number(req.query.offset) || 0;
+  const commentLimit = Number(req.query.commentLimit) || 5;
+  const isAdminOrSelf =
+    req.user && (req.user.role === "admin" || req.user.id === userId);
+
+  const userPosts = await getUserPostsQuery(
+    userId,
+    limit,
+    offset,
+    commentLimit,
+    (includeUnpublished = isAdminOrSelf)
+  );
+
+  return res.status(200).json(userPosts);
+}
+
 module.exports = {
   getUser: catchError(getUser),
   updateUser: catchError(updateUser),
   deleteUser: catchError(deleteUser),
+  getUserPosts: catchError(getUserPosts),
 };
