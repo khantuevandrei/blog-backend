@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const authRouter = require("./routes/authRouter");
+const usersRouter = require("./routes/usersRouter");
 const postsRouter = require("./routes/postsRouter");
 const passport = require("passport");
 
@@ -16,6 +17,7 @@ app.use(passport.initialize());
 
 // Routes
 app.use("/api/auth", authRouter);
+app.use("/api/users", usersRouter);
 app.use("/api/posts", postsRouter);
 
 // Root route
