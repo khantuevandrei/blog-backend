@@ -1,6 +1,6 @@
 const {
   getUserById,
-  findUserByUsername,
+  getUserByUsername,
 } = require("../../db/queries/usersQueries");
 
 async function checkIfUserExists(userId) {
@@ -32,7 +32,7 @@ function validateUsername(username) {
 }
 
 async function checkIfUsernameTaken(username) {
-  const user = await findUserByUsername(username);
+  const user = await getUserByUsername(username);
   if (user) {
     const err = new Error("Username taken");
     err.status = 409;
