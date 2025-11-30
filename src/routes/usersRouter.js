@@ -4,15 +4,16 @@ const {
   getUser,
   updateUser,
   deleteUser,
+  getUserPosts,
 } = require("../controllers/usersController");
 
 const router = express.Router();
 
 const authenticateJWT = passport.authenticate("jwt", { session: false });
 
-// Users routes
 router.get("/:userId", getUser);
 router.put("/:userId", authenticateJWT, updateUser);
 router.delete("/:userId", authenticateJWT, deleteUser);
+router.get("/:userId/posts", getUserPosts);
 
 module.exports = router;
