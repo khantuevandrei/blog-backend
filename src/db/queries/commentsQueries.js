@@ -91,7 +91,7 @@ async function deleteComment(commentId, userId) {
 
 // Get paginated comments for a post
 async function getPostComments(postId, limit = 5, offset = 0) {
-  const result = await pool.query(
+  const commentsResult = await pool.query(
     `
     SELECT
       c.id,
