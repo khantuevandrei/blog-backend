@@ -14,6 +14,6 @@ const authenticateJWT = passport.authenticate("jwt", { session: false });
 router.get("/:userId", getUser);
 router.put("/:userId", authenticateJWT, updateUser);
 router.delete("/:userId", authenticateJWT, deleteUser);
-router.get("/:userId/posts", getUserPosts);
+router.get("/:userId/posts", authenticateJWT, getUserPosts);
 
 module.exports = router;

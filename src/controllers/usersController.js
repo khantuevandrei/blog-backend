@@ -93,7 +93,7 @@ async function getUserPosts(req, res) {
     limit,
     offset,
     commentLimit,
-    (includeUnpublished = isAdminOrSelf)
+    isAdminOrSelf
   );
 
   return res.status(200).json(userPosts);
