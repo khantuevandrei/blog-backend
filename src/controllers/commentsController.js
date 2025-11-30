@@ -1,12 +1,11 @@
 const catchError = require("../helpers/catchError");
+const { checkId, checkTextField } = require("../helpers/validators/general");
+const { checkIfAuthorized } = require("../helpers/validators/users");
 const {
-  checkId,
-  checkTextField,
-  checkIfAuthorized,
   checkIfCommentExists,
-  checkIfPostExists,
   checkIfCommentBelongsToPost,
-} = require("../helpers/validators");
+} = require("../helpers/validators/comments");
+const { checkIfPostExists } = require("../helpers/validators/posts");
 const {
   createComment: createCommentQuery,
   updateComment: updateCommentQuery,
