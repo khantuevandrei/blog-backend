@@ -1,10 +1,7 @@
 const catchError = require("../helpers/catchError");
-const {
-  checkId,
-  checkTextField,
-  checkIfAuthorized,
-  checkIfPostExists,
-} = require("../helpers/validators");
+const { checkId, checkTextField } = require("../helpers/validators/general");
+const { checkIfAuthorized } = require("../helpers/validators/users");
+const { checkIfPostExists } = require("../helpers/validators/posts");
 const {
   createPost: createPostQuery,
   updatePost: updatePostQuery,
