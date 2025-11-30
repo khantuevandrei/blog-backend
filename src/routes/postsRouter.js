@@ -17,7 +17,7 @@ const authenticateJWT = passport.authenticate("jwt", { session: false });
 // Posts routes
 router.get("/", getPublishedPosts);
 router.post("/", authenticateJWT, createPost);
-router.get("/:postId", getPostById);
+router.get("/:postId", authenticateJWT, getPostById);
 router.put("/:postId", authenticateJWT, updatePost);
 router.delete("/:postId", authenticateJWT, deletePost);
 router.patch("/:postId/publish", authenticateJWT, publishPost);

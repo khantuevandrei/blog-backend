@@ -51,7 +51,7 @@ async function getPostById(postId, commentLimit = 5) {
       json_build_object('id', u.id, 'username', u.username) AS author
     FROM posts p
     JOIN users u ON p.user_id = u.id
-    WHERE p.id = $1
+    WHERE p.id = $1 
     LIMIT 1
     `,
     [postId]

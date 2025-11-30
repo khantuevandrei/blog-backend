@@ -18,10 +18,18 @@ const {
 
 async function getPostById(req, res) {
   const postId = checkId(req.params.postId, "Post ID");
+  const isAdminOrSelf =
+    req.user &&
+    (req.user.role === "admin" || req.user.id === req.params.userId);
 
   const foundPost = await checkIfPostExists(postId);
+  if (foundPost.published === true) return res.status(200).json(foundPost);
 
-  return res.status(200).json(foundPost);
+  if (req.user.role === "admin" || req.user.id === foundPost.user_id) {
+    return res.status(200).json(foundPost);
+  } else {
+    return res.status(404).json({ message: "Post not found" });
+  }
 }
 
 // Create a new post
