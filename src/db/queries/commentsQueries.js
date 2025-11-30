@@ -95,10 +95,13 @@ async function getPostComments(postId, limit = 5, offset = 0) {
     `
     SELECT
       c.id,
+      c.post_id,
+      c.user_id,
       c.body,
       c.created_at,
       c.updated_at,
-      json_build_object('id', u.id, 'username', u.username) AS author
+      json_build_object('id', u.id, 'username', u.username) AS author,
+      COUNT(*) OVER() AS total_comments
     FROM comments c
     JOIN users u ON c.user_id = u.id
     WHERE c.post_id = $1
@@ -107,7 +110,21 @@ async function getPostComments(postId, limit = 5, offset = 0) {
     `,
     [postId, limit, offset]
   );
-  return result.rows;
+
+  const comments = commentsResult.rows.map((c) => ({
+    id: c.id,
+    post_id: c.post_id,
+    user_id: c.user_id,
+    body: c.body,
+    created_at: c.created_at,
+    updated_at: c.updated_at,
+    author: c.author,
+  }));
+
+  const totalComments =
+    comments.length > 0 ? Number(commentsResult.rows[0].total_comments) : 0;
+
+  return { comments, total_comments: totalComments };
 }
 
 module.exports = {
