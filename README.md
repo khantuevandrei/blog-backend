@@ -35,7 +35,8 @@ Base URL: `/api`
 ```json
 {
   "id": 1,
-  "username": "john"
+  "username": "john",
+  "role": "user"
 }
 ```
 
@@ -69,6 +70,111 @@ Base URL: `/api`
 ```
 
 **Description:** Authenticate user and return JWT token.
+
+---
+
+## User Routes
+
+### Get Single User
+
+**GET** `/users/:userId`  
+**Auth:** Yes
+
+**Response Example:**
+
+```json
+{
+  "id": 1,
+  "username": "john",
+  "role": "user",
+  "created_at": "2024-11-30T09:10:12.063Z",
+  "post_count": 5
+}
+```
+
+**Description:** Returns a single user by ID, including the total number of posts they have authored.
+
+---
+
+### Get User Posts
+
+**GET** `/users/:userId/posts`  
+**Auth:** Yes
+
+**Response Example:**
+
+```json
+[
+  {
+    "id": 1,
+    "title": "post title",
+    "body": "post body",
+    "published": false,
+    "published_at": null,
+    "created_at": "2024-11-30T09:15:06.689Z",
+    "updated_at": "2024-11-30T09:15:06.689Z",
+    "author": {
+      "id": 1,
+      "username": "sam"
+    },
+    "comments": [],
+    "total_comments": 0
+  }
+]
+```
+
+**Description:** Returns an array of posts written by user. Conditionally shows unpublished posts if requester is author or admin.
+
+---
+
+### Update User
+
+**PUT** `/users/:userId`  
+**Auth:** Yes
+**Body:**
+
+```json
+{
+  "username": "serioussam",
+  "password": "Newpassword1!",
+  "confirmPassword": "Newpassword1!"
+}
+```
+
+**Response Example:**
+
+```json
+{
+  "id": 1,
+  "username": "serioussam",
+  "role": "user",
+  "created_at": "2024-11-30T09:10:12.063Z",
+  "updated_at": "2024-11-30T09:46:29.917Z"
+}
+```
+
+**Description:** Updates user's username or password. Only one can be provided.
+
+---
+
+### Delete User
+
+**DELETE** `/users/:userId`  
+**Auth:** Yes
+
+**Response Example:**
+
+```json
+{
+  "id": 1,
+  "username": "serioussam",
+  "role": "user",
+  "created_at": "2024-11-30T09:10:12.063Z",
+  "updated_at": "2024-11-30T09:46:29.917Z"
+}
+```
+
+**Description:** Deletes a user if requester is user himself or admin
 
 ---
 
@@ -123,7 +229,7 @@ Base URL: `/api`
 ### Get Single Post
 
 **GET** `/posts/:postId`  
-**Auth:** No
+**Auth:** Both
 
 **Response Example:**
 
@@ -155,7 +261,7 @@ Base URL: `/api`
 }
 ```
 
-**Description:** Fetch a single post by ID with nested comments.
+**Description:** Fetch a single post by ID with nested comments. Show unpublished posts only to author or admin.
 
 ---
 
@@ -291,42 +397,6 @@ Base URL: `/api`
 
 ---
 
-### Get Author Posts
-
-**GET** `/posts/author`  
-**Auth:** Yes  
-**Query Parameters (optional):**
-
-- `limit` (default 10)
-- `offset` (default 0)
-- `commentLimit` (default 5)
-
-**Response Example:**
-
-```json
-[
-  {
-    "id": 1,
-    "title": "Oil prices going up!",
-    "body": "Funny or serious content",
-    "published": true,
-    "published_at": "2025-11-30T10:00:00Z",
-    "created_at": "2025-11-29T15:00:00Z",
-    "updated_at": "2025-11-29T15:00:00Z",
-    "author": {
-      "id": 1,
-      "username": "johndoe"
-    },
-    "comments": [],
-    "total_comments": 0
-  }
-]
-```
-
-**Description:** Get posts created by the logged-in author.
-
----
-
 ## Comments Routes (Nested under `/posts/:postId/comments`)
 
 ### Get Post Comments
@@ -343,12 +413,15 @@ Base URL: `/api`
 ```json
 [
   {
-    "id": 10,
-    "body": "Crazy!",
-    "created_at": "2025-11-30T11:00:00Z",
+    "id": 1,
+    "post_id": 4,
+    "user_id": 3,
+    "body": "Hello from BOB",
+    "created_at": "2024-11-30T10:22:10.790Z",
+    "updated_at": "2024-11-30T10:22:10.790Z",
     "author": {
-      "id": 2,
-      "username": "janedoe"
+      "id": 3,
+      "username": "bob"
     }
   }
 ]
