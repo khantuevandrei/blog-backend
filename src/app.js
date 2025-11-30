@@ -19,7 +19,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/posts", postsRouter);
 
 // Root route
-app.get("/", (req, res) => res.send("Welcome"));
+app.get("/", (req, res) => res.send("Welcome to blog API"));
 
 // Unknown routes
 app.use((req, res) => res.status(404).json({ message: "Route not found" }));
