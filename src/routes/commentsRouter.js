@@ -8,7 +8,7 @@ const {
   getPostComments,
 } = require("../controllers/commentsController");
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 const authenticateJWT = passport.authenticate("jwt", { session: false });
 
