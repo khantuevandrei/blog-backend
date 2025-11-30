@@ -1,15 +1,16 @@
 const bcrypt = require("bcryptjs");
 const catchError = require("../helpers/catchError");
 const { checkId } = require("../helpers/validators/general");
-const { checkIfAdminOrSelf } = require("../helpers/validators/authorization");
 const {
   checkIfUserExists,
-  checkUsername,
+  checkIfAdminOrSelf,
+  validateUsername,
   checkIfUsernameTaken,
   sanitizeUser,
-  checkPassword,
+  validatePassword,
 } = require("../helpers/validators/users");
 const {
+  getUserPostCount,
   updateUserById,
   deleteUserById,
 } = require("../db/queries/usersQueries");
@@ -19,7 +20,11 @@ async function getUser(req, res) {
   const userId = checkId(req.params.userId, "User ID");
 
   const user = await checkIfUserExists(userId);
-  const sanitizedUser = sanitizeUser(user);
+  const postCount = await getUserPostCount(userId);
+  const sanitizedUser = {
+    ...sanitizeUser(user),
+    post_count: postCount,
+  };
 
   return res.status(200).json(sanitizedUser);
 }
@@ -40,13 +45,16 @@ async function updateUser(req, res) {
 
   // Username update
   if (req.body.username) {
-    const username = checkUsername(req.body.username);
+    const username = validateUsername(req.body.username);
     await checkIfUsernameTaken(username);
     updateFields.username = username;
   }
   // Password update
   if (req.body.password) {
-    const password = checkPassword(req.body.password, req.body.confirmPassword);
+    const password = validatePassword(
+      req.body.password,
+      req.body.confirmPassword
+    );
     updateFields.password_hash = await bcrypt.hash(password, 10);
   }
 
