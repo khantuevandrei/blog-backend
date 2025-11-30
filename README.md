@@ -18,8 +18,8 @@ Base URL: `/api`
 
 ### Register User
 
-**POST** `/auth/register`
-**Auth:** No
+**POST** `/auth/register`  
+**Auth:** No  
 **Body:**
 
 ```json
@@ -35,9 +35,7 @@ Base URL: `/api`
 ```json
 {
   "id": 1,
-  "username": "john",
-  "role": "user",
-  "created_at": "2025-11-29T12:00:00Z"
+  "username": "john"
 }
 ```
 
@@ -47,8 +45,8 @@ Base URL: `/api`
 
 ### Login User
 
-**POST** `/auth/login`
-**Auth:** No
+**POST** `/auth/login`  
+**Auth:** No  
 **Body:**
 
 ```json
@@ -62,11 +60,15 @@ Base URL: `/api`
 
 ```json
 {
-  "token": "JWT_TOKEN_HERE"
+  "token": "JWT_TOKEN_HERE",
+  "user": {
+    "id": 1,
+    "username": "john"
+  }
 }
 ```
 
-**Description:** Authenticate user and receive JWT.
+**Description:** Authenticate user and return JWT token.
 
 ---
 
@@ -74,39 +76,93 @@ Base URL: `/api`
 
 ### Get Published Posts
 
-**GET** `/posts`
-**Auth:** No
+**GET** `/posts`  
+**Auth:** No  
+**Query Parameters (optional):**
+
+- `limit` (default 10)
+- `offset` (default 0)
+- `commentLimit` (default 5)
+
 **Response Example:**
 
 ```json
 [
   {
     "id": 1,
-    "title": "Post 1",
-    "body": "Content",
-    "published_at": "2025-11-29T12:00:00Z",
-    "created_at": "...",
-    "updated_at": "...",
-    "author": { "id": 1, "username": "john" },
+    "title": "Oil prices going up!",
+    "body": "Funny or serious content",
+    "published": true,
+    "published_at": "2025-11-30T10:00:00Z",
+    "created_at": "2025-11-29T15:00:00Z",
+    "updated_at": "2025-11-29T15:00:00Z",
+    "author": {
+      "id": 1,
+      "username": "johndoe"
+    },
     "comments": [
       {
-        "id": 1,
-        "body": "Nice post!",
-        "created_at": "...",
-        "author": { "id": 2, "username": "alice" }
+        "id": 10,
+        "body": "Crazy!",
+        "created_at": "2025-11-30T11:00:00Z",
+        "author": {
+          "id": 2,
+          "username": "janedoe"
+        }
       }
     ],
-    "total_comments": 1
+    "total_comments": 3
   }
 ]
 ```
 
-**Description:** Get all published posts.
+**Description:** Fetch paginated list of published posts with optional nested comments.
+
+---
+
+### Get Single Post
+
+**GET** `/posts/:postId`  
+**Auth:** No
+
+**Response Example:**
+
+```json
+{
+  "id": 1,
+  "title": "Oil prices going up!",
+  "body": "Funny or serious content",
+  "published": true,
+  "published_at": "2025-11-30T10:00:00Z",
+  "created_at": "2025-11-29T15:00:00Z",
+  "updated_at": "2025-11-29T15:00:00Z",
+  "author": {
+    "id": 1,
+    "username": "johndoe"
+  },
+  "comments": [
+    {
+      "id": 10,
+      "body": "Crazy!",
+      "created_at": "2025-11-30T11:00:00Z",
+      "author": {
+        "id": 2,
+        "username": "janedoe"
+      }
+    }
+  ],
+  "total_comments": 3
+}
+```
+
+**Description:** Fetch a single post by ID with nested comments.
+
+---
 
 ### Create Post
 
-**POST** `/posts`
-**Auth:** JWT required
+**POST** `/posts`  
+**Auth:** Yes  
 **Body:**
 
 ```json
@@ -120,80 +176,36 @@ Base URL: `/api`
 
 ```json
 {
-  "id": 2,
-  "title": "New Post",
-  "body": "Content",
-  "published_at": null,
-  "created_at": "...",
-  "updated_at": "...",
-  "author": { "id": 1, "username": "john" },
-  "comments": []
-}
-```
-
-**Description:** Create a new post.
-
-### Get Current Author's Posts
-
-**GET** `/posts/author`
-**Auth:** JWT required
-**Response Example:**
-
-```json
-[
-  {
-    "id": 2,
-    "title": "New Post",
-    "body": "Content",
-    "published_at": null,
-    "created_at": "...",
-    "updated_at": "...",
-    "author": { "id": 1, "username": "john" },
-    "comments": []
-  }
-]
-```
-
-**Description:** Get posts created by the authenticated user.
-
-### Get Post by ID
-
-**GET** `/posts/:postId`
-**Auth:** No
-**Response Example:**
-
-```json
-{
   "id": 1,
-  "title": "Post 1",
-  "body": "Content",
-  "published_at": "...",
-  "created_at": "...",
-  "updated_at": "...",
-  "author": { "id": 1, "username": "john" },
-  "comments": [
-    {
-      "id": 1,
-      "body": "Nice post!",
-      "created_at": "...",
-      "author": { "id": 2, "username": "alice" }
-    }
-  ]
+  "title": "Oil prices going up!",
+  "body": "Funny or serious content",
+  "published": false,
+  "published_at": null,
+  "created_at": "2025-11-29T15:00:00Z",
+  "updated_at": "2025-11-29T15:00:00Z",
+  "author": {
+    "id": 1,
+    "username": "johndoe"
+  },
+  "comments": [],
+  "total_comments": 0
 }
 ```
 
-**Description:** Retrieve a single post.
+**Description:** Create a new post (draft).
+
+---
 
 ### Update Post
 
-**PUT** `/posts/:postId`
-**Auth:** JWT required
+**PUT** `/posts/:postId`  
+**Auth:** Yes  
 **Body:**
 
 ```json
 {
-  "title": "Updated",
-  "body": "Updated content"
+  "title": "string",
+  "body": "string"
 }
 ```
 
@@ -202,55 +214,76 @@ Base URL: `/api`
 ```json
 {
   "id": 1,
-  "title": "Updated",
+  "title": "Updated title",
   "body": "Updated content",
-  "published_at": "...",
-  "created_at": "...",
-  "updated_at": "...",
-  "author": { "id": 1, "username": "john" },
-  "comments": [ ... ]
+  "published": false,
+  "published_at": null,
+  "created_at": "2025-11-29T15:00:00Z",
+  "updated_at": "2025-11-30T12:00:00Z",
+  "author": {
+    "id": 1,
+    "username": "johndoe"
+  },
+  "comments": [],
+  "total_comments": 0
 }
 ```
 
-**Description:** Update a post.
+**Description:** Update an existing post.
+
+---
 
 ### Delete Post
 
-**DELETE** `/posts/:postId`
-**Auth:** JWT required
+**DELETE** `/posts/:postId`  
+**Auth:** Yes
+
 **Response Example:**
 
 ```json
 {
   "id": 1,
-  "title": "Post 1",
-  "body": "Content",
-  "published_at": "...",
-  "created_at": "...",
-  "updated_at": "...",
-  "author": { "id": 1, "username": "john" },
-  "comments": []
+  "title": "Oil prices going up!",
+  "body": "Funny or serious content",
+  "published": false,
+  "published_at": null,
+  "created_at": "2025-11-29T15:00:00Z",
+  "updated_at": "2025-11-29T15:00:00Z",
+  "author": {
+    "id": 1,
+    "username": "johndoe"
+  },
+  "comments": [],
+  "total_comments": 0
 }
 ```
 
 **Description:** Delete a post.
 
+---
+
 ### Publish Post
 
-**PATCH** `/posts/:postId/publish`
-**Auth:** JWT required
+**PATCH** `/posts/:postId/publish`  
+**Auth:** Yes
+
 **Response Example:**
 
 ```json
 {
   "id": 1,
-  "title": "Post 1",
-  "body": "Content",
-  "published_at": "2025-11-29T12:00:00Z",
-  "created_at": "...",
-  "updated_at": "...",
-  "author": { "id": 1, "username": "john" },
-  "comments": []
+  "title": "Oil prices going up!",
+  "body": "Funny or serious content",
+  "published": true,
+  "published_at": "2025-11-30T10:00:00Z",
+  "created_at": "2025-11-29T15:00:00Z",
+  "updated_at": "2025-11-30T10:00:00Z",
+  "author": {
+    "id": 1,
+    "username": "johndoe"
+  },
+  "comments": [],
+  "total_comments": 0
 }
 ```
 
@@ -258,126 +291,159 @@ Base URL: `/api`
 
 ---
 
-## Comments Routes (Nested under Posts)
+### Get Author Posts
 
-### Get All Comments for a Post
+**GET** `/posts/author`  
+**Auth:** Yes  
+**Query Parameters (optional):**
 
-**GET** `/posts/:postId/comments`
-**Auth:** No
-**Query Params:** `limit` (default 5), `offset` (default 0)
+- `limit` (default 10)
+- `offset` (default 0)
+- `commentLimit` (default 5)
+
 **Response Example:**
 
 ```json
 [
   {
     "id": 1,
-    "body": "Nice post!",
-    "created_at": "...",
-    "updated_at": "...",
-    "author": { "id": 2, "username": "alice" }
+    "title": "Oil prices going up!",
+    "body": "Funny or serious content",
+    "published": true,
+    "published_at": "2025-11-30T10:00:00Z",
+    "created_at": "2025-11-29T15:00:00Z",
+    "updated_at": "2025-11-29T15:00:00Z",
+    "author": {
+      "id": 1,
+      "username": "johndoe"
+    },
+    "comments": [],
+    "total_comments": 0
   }
 ]
 ```
 
-**Description:** Retrieve all comments for a post.
-
-### Create Comment
-
-**POST** `/posts/:postId/comments`
-**Auth:** JWT required
-**Body:**
-
-```json
-{
-  "body": "Great post!"
-}
-```
-
-**Response Example:**
-
-```json
-{
-  "id": 2,
-  "post_id": 1,
-  "body": "Great post!",
-  "created_at": "...",
-  "updated_at": "...",
-  "author": { "id": 1, "username": "john" }
-}
-```
-
-**Description:** Create a new comment for a post.
-
-### Get Comment by ID
-
-**GET** `/posts/:postId/comments/:commentId`
-**Auth:** No
-**Response Example:**
-
-```json
-{
-  "id": 1,
-  "post_id": 1,
-  "body": "Nice post!",
-  "created_at": "...",
-  "updated_at": "...",
-  "author": { "id": 2, "username": "alice" }
-}
-```
-
-**Description:** Get a single comment.
-
-### Update Comment
-
-**PUT** `/posts/:postId/comments/:commentId`
-**Auth:** JWT required
-**Body:**
-
-```json
-{
-  "body": "Updated comment"
-}
-```
-
-**Response Example:**
-
-```json
-{
-  "id": 1,
-  "post_id": 1,
-  "body": "Updated comment",
-  "created_at": "...",
-  "updated_at": "...",
-  "author": { "id": 2, "username": "alice" }
-}
-```
-
-**Description:** Update a comment.
-
-### Delete Comment
-
-**DELETE** `/posts/:postId/comments/:commentId`
-**Auth:** JWT required
-**Response Example:**
-
-```json
-{
-  "id": 1,
-  "post_id": 1,
-  "body": "Nice post!",
-  "created_at": "...",
-  "updated_at": "...",
-  "author": { "id": 2, "username": "alice" }
-}
-```
-
-**Description:** Delete a comment.
+**Description:** Get posts created by the logged-in author.
 
 ---
 
-### Notes
+## Comments Routes (Nested under `/posts/:postId/comments`)
 
-- JWT-protected routes require `Authorization: Bearer <token>` header.
-- Comments are always scoped under posts.
-- Pagination: `/posts/:postId/comments?limit=5&offset=0` (default `limit=5`, `offset=0`).
-- `created_at` and `updated_at` timestamps are ISO strings.
+### Get Post Comments
+
+**GET** `/posts/:postId/comments`  
+**Auth:** No  
+**Query Parameters (optional):**
+
+- `limit` (default 5)
+- `offset` (default 0)
+
+**Response Example:**
+
+```json
+[
+  {
+    "id": 10,
+    "body": "Crazy!",
+    "created_at": "2025-11-30T11:00:00Z",
+    "author": {
+      "id": 2,
+      "username": "janedoe"
+    }
+  }
+]
+```
+
+**Description:** Fetch comments for a specific post with pagination.
+
+---
+
+### Create Comment
+
+**POST** `/posts/:postId/comments`  
+**Auth:** Yes  
+**Body:**
+
+```json
+{
+  "body": "string"
+}
+```
+
+**Response Example:**
+
+```json
+{
+  "id": 10,
+  "post_id": 1,
+  "user_id": 2,
+  "body": "Great post!",
+  "created_at": "2025-11-30T11:00:00Z",
+  "updated_at": "2025-11-30T11:00:00Z",
+  "author": {
+    "id": 2,
+    "username": "janedoe"
+  }
+}
+```
+
+**Description:** Add a comment to a post.
+
+---
+
+### Update Comment
+
+**PUT** `/posts/:postId/comments/:commentId`  
+**Auth:** Yes  
+**Body:**
+
+```json
+{
+  "body": "string"
+}
+```
+
+**Response Example:**
+
+```json
+{
+  "id": 10,
+  "post_id": 1,
+  "user_id": 2,
+  "body": "Updated comment!",
+  "created_at": "2025-11-30T11:00:00Z",
+  "updated_at": "2025-11-30T12:00:00Z",
+  "author": {
+    "id": 2,
+    "username": "janedoe"
+  }
+}
+```
+
+**Description:** Update a specific comment.
+
+---
+
+### Delete Comment
+
+**DELETE** `/posts/:postId/comments/:commentId`  
+**Auth:** Yes
+
+**Response Example:**
+
+```json
+{
+  "id": 10,
+  "post_id": 1,
+  "user_id": 2,
+  "body": "Great post!",
+  "created_at": "2025-11-30T11:00:00Z",
+  "updated_at": "2025-11-30T11:00:00Z",
+  "author": {
+    "id": 2,
+    "username": "janedoe"
+  }
+}
+```
+
+**Description:** Delete a specific comment.
