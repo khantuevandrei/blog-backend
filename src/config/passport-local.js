@@ -2,7 +2,7 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const bcrypt = require("bcryptjs");
 
-const { findUserByUsername } = require("../db/queries/usersQueries");
+const { getUserByUsername } = require("../db/queries/usersQueries");
 
 passport.use(
   new LocalStrategy(
@@ -14,7 +14,7 @@ passport.use(
       try {
         const normalizedUsername = username.trim().toLowerCase();
 
-        const user = await findUserByUsername(normalizedUsername);
+        const user = await getUserByUsername(normalizedUsername);
         if (!user) return done(null, false, { message: "Incorrect username" });
 
         const match = await bcrypt.compare(password, user.password_hash);
