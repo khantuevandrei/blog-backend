@@ -8,7 +8,6 @@ const catchError = require("../helpers/catchError");
 const {
   validateUsername,
   checkIfUsernameTaken,
-  sanitizeUser,
   validatePassword,
 } = require("../helpers/validators/users");
 
@@ -22,10 +21,14 @@ async function registerUser(req, res) {
     req.body.confirmPassword
   );
   const password_hash = await bcrypt.hash(password, 10);
-  const userInfo = await createUser(username, password_hash);
-  const sanitizedUserInfo = sanitizeUser(userInfo);
+  const newUser = await createUser(username, password_hash);
+  const sanitizedUser = {
+    id: newUser.id,
+    username: newUser.username,
+    role: newUser.role,
+  };
 
-  return res.status(201).json(sanitizedUserInfo);
+  return res.status(201).json(sanitizedUser);
 }
 
 // Login user
@@ -40,8 +43,12 @@ function loginUser(req, res, next) {
         .json({ message: info.message || "Invalid credentials" });
     }
 
-    // Sanitize user, don't send password
-    const sanitizedUser = sanitizeUser(user);
+    // Sanitize user, send minimal payload
+    const sanitizedUser = {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+    };
 
     // Sign JWT
     const token = jwt.sign(sanitizedUser, process.env.JWT_SECRET, {
