@@ -47,7 +47,7 @@ Base URL: `/api`
 ### Login User
 
 **POST** `/auth/login`  
-**Auth:** No  
+**Auth:** No
 **Body:**
 
 ```json
@@ -78,7 +78,7 @@ Base URL: `/api`
 ### Get Single User
 
 **GET** `/users/:userId`  
-**Auth:** Yes
+**Auth:** No
 
 **Response Example:**
 
