@@ -71,7 +71,7 @@ function validatePassword(password, confirmPassword) {
 }
 
 function checkIfAdminOrSelf(targetUser, requester) {
-  if (requester.role !== "admin" || targetUser.id !== requester.id) {
+  if (requester.role !== "admin" && targetUser.id !== requester.id) {
     const err = new Error("Not authorized");
     err.status = 403;
     throw err;
