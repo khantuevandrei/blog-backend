@@ -368,7 +368,7 @@ Base URL: `/api`
 
 ---
 
-### Publish Post
+### Publish/Unpublish Post
 
 **PATCH** `/posts/:postId/publish`  
 **Auth:** Yes
