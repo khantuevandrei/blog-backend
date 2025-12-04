@@ -5,7 +5,7 @@ const {
   createPost,
   updatePost,
   deletePost,
-  publishPost,
+  togglePublish,
   getPublishedPosts,
 } = require("../controllers/postsController");
 
@@ -20,7 +20,7 @@ router.post("/", authenticateJWT, createPost);
 router.get("/:postId", authenticateJWT, getPostById);
 router.put("/:postId", authenticateJWT, updatePost);
 router.delete("/:postId", authenticateJWT, deletePost);
-router.patch("/:postId/publish", authenticateJWT, publishPost);
+router.patch("/:postId/publish", authenticateJWT, togglePublish);
 
 // Nested comments routes
 router.use("/:postId/comments", commentsRouter);
