@@ -164,17 +164,17 @@ async function deletePost(postId) {
 }
 
 // Publish post
-async function publishPost(postId) {
+async function togglePublish(postId, publish) {
   const publishedResult = await pool.query(
     `
     UPDATE posts
-    SET published = TRUE,
-        published_at = NOW(),
+    SET published = $2,
+        published_at = CASE WHEN $2 = TRUE THEN NOW() ELSE NULL END,
         updated_at = NOW()
     WHERE id = $1
     RETURNING id, user_id, title, body, published, published_at, created_at, updated_at
     `,
-    [postId]
+    [postId, publish]
   );
   const publishedPost = publishedResult.rows[0];
   if (!publishedPost) return null;
@@ -185,11 +185,13 @@ async function publishPost(postId) {
   );
   const author = authorResult.rows[0] || null;
 
+  const { commentsByPost, totalCommentsMap } = await fetchComments([postId]);
+
   return {
     ...publishedPost,
     author,
-    comments: [],
-    total_comments: 0,
+    comments: commentsByPost[postId] || [],
+    total_comments: totalCommentsMap[postId] || 0,
   };
 }
 
@@ -275,7 +277,7 @@ module.exports = {
   createPost,
   updatePost,
   deletePost,
-  publishPost,
+  togglePublish,
   getPublishedPosts,
   getUserPosts,
 };
