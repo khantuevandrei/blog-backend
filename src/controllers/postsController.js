@@ -6,9 +6,9 @@ const {
   createPost: createPostQuery,
   updatePost: updatePostQuery,
   deletePost: deletePostQuery,
-  publishPost: publishPostQuery,
+  togglePublish: togglePublishQuery,
   getPublishedPosts: getPublishedPostsQuery,
-  getAuthorPosts: getAuthorPostsQuery,
+  getUserPosts: getUserPostsQuery,
 } = require("../db/queries/postsQueries");
 
 // Get a single post by ID
@@ -92,15 +92,15 @@ async function deletePost(req, res) {
 // - Ensures user is authorized
 // - Returns published post
 
-async function publishPost(req, res) {
+async function togglePublish(req, res) {
   const postId = checkId(req.params.postId, "Post ID");
   const userId = req.user.id;
 
   const foundPost = await checkIfPostExists(postId);
   checkIfAuthorized(foundPost, userId);
 
-  const publishedPost = await publishPostQuery(postId);
-  return res.status(200).json(publishedPost);
+  const result = await togglePublishQuery(postId, !foundPost.published);
+  return res.status(200).json(result);
 }
 
 // Get published posts with pagination
@@ -130,7 +130,7 @@ async function getAuthorPosts(req, res) {
   const offset = Number(req.query.offset) || 0;
   const commentLimit = Number(req.query.commentLimit) || 5;
 
-  const authorPosts = await getAuthorPostsQuery(
+  const authorPosts = await getUserPostsQuery(
     authorId,
     limit,
     offset,
@@ -144,7 +144,7 @@ module.exports = {
   createPost: catchError(createPost),
   updatePost: catchError(updatePost),
   deletePost: catchError(deletePost),
-  publishPost: catchError(publishPost),
+  togglePublish: catchError(togglePublish),
   getPublishedPosts: catchError(getPublishedPosts),
   getAuthorPosts: catchError(getAuthorPosts),
 };
