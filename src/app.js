@@ -11,7 +11,7 @@ const app = express();
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use(passport.initialize());
 
